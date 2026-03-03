@@ -879,8 +879,7 @@ pip install -r requirements-dev.txt
 .\scripts\bootstrap.ps1
 ```
 
-현재 저장소는 **초기 세팅 단계**이므로 아래 실행 파일이 아직 준비되지 않았을 수 있습니다.
-아래 실행 명령은 `feature/setup-flask-app` 완료 후 사용합니다.
+아래 실행 명령은 현재 저장소 기준으로 바로 사용할 수 있습니다.
 
 ```bash
 python -m venv .venv
@@ -898,7 +897,7 @@ python run.py
 
 ### 2) Docker 실행 (기본: app + mongo)
 
-`docker/docker-compose.yml` 작성 완료(`feature/setup-docker-compose`) 후 사용합니다.
+기본 Docker 실행(`app + mongo`) 명령입니다.
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
@@ -906,7 +905,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 ### 3) Docker 개발 실행 (mongo-express 포함)
 
-`docker/docker-compose.dev.yml` 작성 완료 후 사용합니다.
+개발 보조 실행(`mongo-express` 포함) 명령입니다.
 
 ```bash
 docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d --build
@@ -1041,10 +1040,10 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] test: 앱 부팅 및 기본 라우트 테스트 작성
 
 #### 🌿 Branch: `feature/setup-docker-compose` (Docker 환경 구성)
-- [ ] feat: `docker/docker-compose.yml` 작성 (app + mongo)
-- [ ] feat: `docker/docker-compose.dev.yml` 작성 (mongo-express 포함)
-- [ ] feat: `docker/docker-compose.test.yml` 작성 (테스트 전용)
-- [ ] test: 로컬/도커 실행 시나리오 검증
+- [x] feat: `docker/docker-compose.yml` 작성 (app + mongo)
+- [x] feat: `docker/docker-compose.dev.yml` 작성 (mongo-express 포함)
+- [x] feat: `docker/docker-compose.test.yml` 작성 (테스트 전용)
+- [x] test: 로컬/도커 실행 시나리오 검증
 
 #### ⚙️ Branch: `feature/test-unit-integration` (테스트 체계 / 초기 세팅 우선)
 - [ ] test: 서비스 단위 테스트 기본 골격 작성
