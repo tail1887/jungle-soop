@@ -1,0 +1,22 @@
+services:
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: python -m pytest -q
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/jungle_soop_test
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
