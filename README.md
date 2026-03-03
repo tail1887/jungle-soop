@@ -1035,10 +1035,10 @@ docker compose -f docker/docker-compose.test.yml down -v
   - [x] bootstrap 스크립트 및 `.env.example` 작성
 
 #### 🌿 Branch: `feature/setup-flask-app` (Flask 기본 앱 구성)
-- [ ] feat: `run.py` 엔트리포인트 작성
-- [ ] feat: `app/__init__.py` + `create_app()` 구조 작성
-- [ ] feat: 헬스체크/기본 라우트 작성
-- [ ] test: 앱 부팅 및 기본 라우트 테스트 작성
+- [x] feat: `run.py` 엔트리포인트 작성
+- [x] feat: `app/__init__.py` + `create_app()` 구조 작성
+- [x] feat: 헬스체크/기본 라우트 작성
+- [x] test: 앱 부팅 및 기본 라우트 테스트 작성
 
 #### 🌿 Branch: `feature/setup-docker-compose` (Docker 환경 구성)
 - [ ] feat: `docker/docker-compose.yml` 작성 (app + mongo)
