@@ -1,25 +1,108 @@
 import pytest
 
+from app.db import get_database
+
+
+@pytest.fixture(autouse=True)
+def clear_meetings(client):
+    # make sure each integration test starts with an empty collection
+    db = get_database(client.application)
+    db.meetings.delete_many({})
+    yield
+    db.meetings.delete_many({})
+
 
 @pytest.mark.integration
-@pytest.mark.skip(reason="handcoding template: feature/meetings-crud 구현 후 활성화")
 def test_create_meeting_success(client):
-    # TODO: 모임 생성(201) 검증
-    response = client.post("/api/v1/meetings", json={})
+    payload = {
+        "title": "저녁 같이 먹을 사람",
+        "description": "분식집 가실 분 구해요.",
+        "place": "기숙사 정문",
+        "scheduled_at": "2026-03-05T18:30:00+09:00",
+        "max_capacity": 4,
+    }
+    response = client.post("/api/v1/meetings", json=payload)
     assert response.status_code == 201
+    body = response.get_json()
+    assert body["success"] is True
+    assert "meeting_id" in body["data"]
 
 
 @pytest.mark.integration
-@pytest.mark.skip(reason="handcoding template: feature/meetings-crud 구현 후 활성화")
 def test_update_meeting_success(client):
-    # TODO: 모임 수정(200) 검증
-    response = client.patch("/api/v1/meetings/sample", json={})
+    # create first as user1
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+
+    payload = {
+        "title": "모임 제목",
+        "place": "장소",
+        "scheduled_at": "2026-04-01T12:00:00+09:00",
+        "max_capacity": 5,
+    }
+    create_res = client.post("/api/v1/meetings", json=payload)
+    meeting_id = create_res.get_json()["data"]["meeting_id"]
+
+    patch_payload = {"title": "모임 제목(수정)", "scheduled_at": "2026-04-01T13:00:00+09:00"}
+    response = client.patch(f"/api/v1/meetings/{meeting_id}", json=patch_payload)
     assert response.status_code == 200
+    body = response.get_json()
+    assert body["success"] is True
+    assert body["data"]["meeting_id"] == meeting_id
 
 
 @pytest.mark.integration
-@pytest.mark.skip(reason="handcoding template: feature/meetings-crud 구현 후 활성화")
 def test_delete_meeting_success(client):
-    # TODO: 모임 삭제(200 또는 204) 검증
-    response = client.delete("/api/v1/meetings/sample")
-    assert response.status_code in (200, 204)
+    # create first as user1
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+
+    payload = {
+        "title": "삭제할 모임",
+        "place": "어디",
+        "scheduled_at": "2026-05-01T12:00:00+09:00",
+        "max_capacity": 10,
+    }
+    create_res = client.post("/api/v1/meetings", json=payload)
+    meeting_id = create_res.get_json()["data"]["meeting_id"]
+
+    response = client.delete(f"/api/v1/meetings/{meeting_id}")
+    # according to spec should be 204 with no body
+    assert response.status_code == 204
+    assert response.data == b""
+
+
+def test_update_forbidden_if_not_author(client):
+    # create as user1
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+    payload = {
+        "title": "비밀 모임",
+        "place": "장소",
+        "scheduled_at": "2026-06-01T12:00:00+09:00",
+        "max_capacity": 5,
+    }
+    meeting_id = client.post("/api/v1/meetings", json=payload).get_json()["data"]["meeting_id"]
+
+    # switch to another user and attempt update
+    with client.session_transaction() as sess:
+        sess["user_id"] = "other"
+    response = client.patch(f"/api/v1/meetings/{meeting_id}", json={"title": "hack"})
+    assert response.status_code == 403
+
+
+def test_delete_forbidden_if_not_author(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+    payload = {
+        "title": "삭제 못해",
+        "place": "어디",
+        "scheduled_at": "2026-07-01T12:00:00+09:00",
+        "max_capacity": 5,
+    }
+    meeting_id = client.post("/api/v1/meetings", json=payload).get_json()["data"]["meeting_id"]
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = "other"
+    response = client.delete(f"/api/v1/meetings/{meeting_id}")
+    assert response.status_code == 403
