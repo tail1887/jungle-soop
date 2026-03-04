@@ -1046,10 +1046,10 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] test: 로컬/도커 실행 시나리오 검증
 
 #### ⚙️ Branch: `feature/test-unit-integration` (테스트 체계 / 초기 세팅 우선)
-- [ ] test: 서비스 단위 테스트 기본 골격 작성
-- [ ] test: API + DB 통합 테스트 기본 골격 작성
-- [ ] test: `docker/docker-compose.test.yml` 기준 테스트 통과
-- [ ] rule: 기능 브랜치에서 테스트 동시 작성 규칙 반영
+- [x] test: 서비스 단위 테스트 기본 골격 작성
+- [x] test: API + DB 통합 테스트 기본 골격 작성
+- [ ] test: `docker/docker-compose.test.yml` 기준 테스트 통과 (Docker Desktop 실행 환경에서 확인 필요)
+- [x] rule: 기능 브랜치에서 테스트 동시 작성 규칙 반영
 
 #### ⚙️ Branch: `feature/ci-github-actions` (CI / 초기 세팅 우선)
 - [ ] feat: GitHub Actions CI workflow 작성
@@ -1121,6 +1121,7 @@ docker compose -f docker/docker-compose.test.yml down -v
 
 - 테스트는 Phase 마지막에 모아서 하지 않고 **기능 개발과 동시에** 작성합니다.
 - 각 기능 브랜치에서 최소 1개 이상의 단위/통합 테스트를 함께 추가합니다.
+- 기능 브랜치 PR에는 변경 기능을 검증하는 테스트(또는 미작성 사유)를 반드시 포함합니다.
 - PR 머지 조건:
   - [ ] 로컬 테스트 통과
   - [ ] `docker/docker-compose.test.yml` 기준 테스트 통과
