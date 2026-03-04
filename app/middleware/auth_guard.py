@@ -1,41 +1,62 @@
 from functools import wraps
-
-from flask import jsonify, request
-
+from flask import jsonify, request, g
+from app.utils.security import decode_token
+from flask import abort
 
 def login_required(handler):
     @wraps(handler)
     def wrapper(*args, **kwargs):
-        # TODO(feature/auth-guard): JWT 검증 로직 확정 후 guard 완성
-        # 기대 포맷: Authorization: Bearer <access_token>
         auth_header = request.headers.get("Authorization", "")
         token = _extract_bearer_token(auth_header)
-        if not token or not _is_valid_access_token(token):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": {
-                            "code": "UNAUTHORIZED",
-                            "message": "로그인이 필요합니다.",
-                        },
-                    }
-                ),
-                401,
-            )
+        
+        if not token:
+            return _unauthorized_response()
+
+        payload = decode_token(token)
+        if not payload:
+            return _unauthorized_response()
+
+        g.user_id = payload.get("user_id")
+        
         return handler(*args, **kwargs)
 
     return wrapper
 
+#작성자 권한 검증
+def check_ownership(owner_id):
+    """현재 로그인한 유저(g.user_id)와 리소스 소유자(owner_id)가 일치하는지 확인"""
+    if str(g.user_id) != str(owner_id):
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "FORBIDDEN",
+                "message": "해당 리소스에 대한 권한이 없습니다."
+            }
+        }), 403
+    return None
 
 def _extract_bearer_token(auth_header: str) -> str:
     if not auth_header.startswith("Bearer "):
         return ""
     return auth_header.removeprefix("Bearer ").strip()
 
+def _unauthorized_response():
+    return jsonify({
+        "success": False,
+        "error": {
+            "code": "UNAUTHORIZED",
+            "message": "로그인이 필요합니다.",
+        },
+    }), 401
 
-def _is_valid_access_token(token: str) -> bool:
-    # TODO(feature/auth-guard): JWT 라이브러리(PyJWT 등)로 signature/exp/sub 검증 구현
-    # 현재는 미구현 상태를 명시하기 위해 항상 False를 반환합니다.
-    _ = token
-    return False
+def check_ownership(resource_owner_id: str):
+    """현재 로그인한 유저가 해당 리소스의 주인인지 확인"""
+    if str(g.user_id) != str(resource_owner_id):
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "FORBIDDEN",
+                "message": "해당 권한이 없습니다."
+            }
+        }), 403
+    return None
