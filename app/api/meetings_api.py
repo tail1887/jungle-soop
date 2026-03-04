@@ -7,6 +7,7 @@ meetings_bp = Blueprint("meetings_api", __name__, url_prefix="/api/v1/meetings")
 
 
 @meetings_bp.post("")
+@login_required
 def create_meeting():
     payload = request.get_json(silent=True) or {}
     result = MeetingService.create(payload)
