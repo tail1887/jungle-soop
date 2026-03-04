@@ -1052,10 +1052,24 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] rule: 기능 브랜치에서 테스트 동시 작성 규칙 반영
 
 #### ⚙️ Branch: `feature/ci-github-actions` (CI / 초기 세팅 우선)
-- [ ] feat: GitHub Actions CI workflow 작성
-- [ ] feat: PR/push 시 자동 테스트 실행
-- [ ] feat: `main` 머지 시 EC2 자동 배포 workflow 작성
-- [ ] docs: CI 파이프라인 문서 반영
+- [x] feat: GitHub Actions CI workflow 작성
+- [x] feat: PR/push 시 자동 테스트 실행
+- [x] feat: `main` 머지 시 EC2 자동 배포 workflow 작성
+- [x] docs: CI 파이프라인 문서 반영
+
+  - **CI**: `.github/workflows/ci.yml`
+    - PR / `main` push 시 `pytest` + `docker-compose.test` 실행
+  - **CD**: `.github/workflows/deploy.yml`
+    - `main` push 시 EC2 SSH 접속 후 배포 자동화
+    - `workflow_dispatch`로 수동 배포 가능
+  - **배포 스크립트**: `scripts/deploy.sh`
+    - 서버에서 레포 동기화 후 `docker compose up -d --build` 실행
+  - **필수 GitHub Secrets**
+    - `EC2_HOST`: EC2 호스트 (IP 또는 DNS)
+    - `EC2_USER`: SSH 사용자 (예: `ubuntu`)
+    - `EC2_SSH_KEY`: SSH private key 전체 내용
+  - **선택 GitHub Secrets**
+    - `EC2_APP_DIR`: 서버 배포 디렉토리 (미설정 시 기본값 `~/jungle-soop`)
 
 #### 🌿 Branch: `feature/auth-signup` (회원가입)
 - [ ] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
@@ -1191,14 +1205,13 @@ PR 생성 시 다음 절차를 따릅니다:
    실행:
 
    ```bash
-   git push origin <branch-name>
+   git push origin feature/<branch-name>
    ```
 
 2. **PR 생성**
    - GitHub 저장소에서 `Compare & pull request` 버튼 클릭
    - 또는 직접 PR 생성 페이지로 이동:  
-     `https://github.com/<owner>/<repo>/pull/new/<branch-name>`
-   - 저장소 생성 후 위 URL의 `<owner>/<repo>`를 실제 값으로 교체합니다.
+     `https://github.com/tail1887/jungle-soop/pull/new/<branch-name>`
 
 3. **PR 템플릿 사용**
    - PR 생성 시 `.github/pull_request_template.md` 템플릿이 자동으로 표시됩니다.
