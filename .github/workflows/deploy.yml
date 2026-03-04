@@ -15,6 +15,24 @@ jobs:
   deploy-ec2:
     runs-on: ubuntu-latest
     steps:
+      - name: Preflight - check EC2 SSH connectivity
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          set -e
+          if [ -z "$EC2_HOST" ]; then
+            echo "EC2_HOST secret is empty."
+            exit 1
+          fi
+          echo "Checking TCP connectivity to ${EC2_HOST}:22 ..."
+          if nc -zvw 5 "$EC2_HOST" 22; then
+            echo "TCP 22 reachable."
+          else
+            echo "Cannot reach ${EC2_HOST}:22 from GitHub runner."
+            echo "Check EC2 security group, subnet route table(IGW), and NACL rules."
+            exit 1
+          fi
+
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
