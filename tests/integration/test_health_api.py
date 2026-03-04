@@ -62,3 +62,33 @@ def test_default_pages_show_logout_button_in_nav(client):
     assert response.status_code == 200
     assert b"id=\"nav-logout-button\"" in response.data
     assert b"/static/js/nav.js" in response.data
+
+
+@pytest.mark.integration
+def test_meeting_list_page_has_api_bound_components(client):
+    response = client.get("/meetings")
+    assert response.status_code == 200
+    assert b'id="meetings-list"' in response.data
+    assert b'id="meetings-refresh-button"' in response.data
+    assert b'id="meetings-list-message"' in response.data
+    assert b"/static/js/meetings.js" in response.data
+
+
+@pytest.mark.integration
+def test_meeting_create_page_has_form_components(client):
+    response = client.get("/meetings/new")
+    assert response.status_code == 200
+    assert b'id="meeting-create-form"' in response.data
+    assert b'id="meeting-create-message"' in response.data
+    assert b'id="meeting-create-submit-button"' in response.data
+    assert b"/static/js/meetings.js" in response.data
+
+
+@pytest.mark.integration
+def test_meeting_detail_page_has_detail_components(client):
+    response = client.get("/meetings/sample-1")
+    assert response.status_code == 200
+    assert b'id="meeting-detail-root"' in response.data
+    assert b'data-meeting-id="sample-1"' in response.data
+    assert b'id="meeting-detail-refresh-button"' in response.data
+    assert b"/static/js/meetings.js" in response.data
