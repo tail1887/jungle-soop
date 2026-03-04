@@ -12,5 +12,14 @@ def test_health_endpoint(client):
 def test_index_endpoint(client):
     response = client.get("/")
     assert response.status_code == 200
-    payload = response.get_json()
-    assert payload["service"] == "jungle-soop"
+    assert b"Jungle Soop" in response.data
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "path",
+    ["/login", "/signup", "/meetings", "/meetings/new", "/meetings/sample-1"],
+)
+def test_frontend_scaffold_pages(client, path):
+    response = client.get(path)
+    assert response.status_code == 200

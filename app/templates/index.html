@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Jungle Soop | 홈{% endblock %}
+{% block content %}
+<section class="card">
+    <h2>기숙사 커뮤니티 웹앱</h2>
+    <p>프론트엔드 협업을 위한 기본 페이지 뼈대가 준비되었습니다.</p>
+    <ul>
+        <li><a href="{{ url_for('login') }}">로그인 페이지</a></li>
+        <li><a href="{{ url_for('signup') }}">회원가입 페이지</a></li>
+        <li><a href="{{ url_for('meeting_list') }}">모임 목록 페이지</a></li>
+    </ul>
+</section>
+{% endblock %}
