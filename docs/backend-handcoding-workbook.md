@@ -30,12 +30,12 @@
 
 ### B. `feature/auth-login-logout`
 1. `AuthService.login()`에서 계정 조회 + 비밀번호 검증
-2. 로그인 성공 시 세션(`session["user_id"]`) 저장
-3. `AuthService.logout()`에서 세션 제거
+2. 로그인 성공 시 JWT(access/refresh) 발급
+3. `AuthService.logout()`에서 토큰 폐기 정책 처리
 4. `tests/integration/test_auth_login_logout_api.py` 활성화
 
 ### C. `feature/auth-guard`
-1. `login_required` 데코레이터 정책 확정
+1. `login_required` 데코레이터에서 `Authorization: Bearer <token>` 처리
 2. 보호가 필요한 API에 데코레이터 적용
 3. 401/403 공통 실패 포맷 통일
 4. `tests/integration/test_auth_guard_api.py` 활성화

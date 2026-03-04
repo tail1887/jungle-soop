@@ -14,13 +14,13 @@ class AuthService:
     @staticmethod
     def login(payload: dict) -> dict:
         # TODO(feature/auth-login-logout):
-        # 이메일/비밀번호 검증, 세션 생성 구현
+        # 이메일/비밀번호 검증 후 JWT(access/refresh) 발급 구현
         return _not_implemented("AUTH_LOGIN_NOT_IMPLEMENTED")
 
     @staticmethod
     def logout() -> dict:
         # TODO(feature/auth-login-logout):
-        # 세션 삭제 구현
+        # 토큰 폐기 전략(블랙리스트/리프레시 토큰 회수) 구현
         return _not_implemented("AUTH_LOGOUT_NOT_IMPLEMENTED")
 
 
