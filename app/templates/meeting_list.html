@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Jungle Soop | 모임 목록{% endblock %}
+{% block content %}
+<section class="card">
+    <h2>모임 목록</h2>
+    <p>추후 API 연동 시 서버 데이터로 목록을 렌더링합니다.</p>
+    <ul>
+        <li><a href="{{ url_for('meeting_detail', meeting_id='sample-1') }}">샘플 모임 1</a></li>
+        <li><a href="{{ url_for('meeting_detail', meeting_id='sample-2') }}">샘플 모임 2</a></li>
+    </ul>
+</section>
+{% endblock %}
