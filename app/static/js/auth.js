@@ -90,6 +90,7 @@ function bindLoginForm() {
             return;
         }
         setMessage(message, "로그인에 성공했습니다.", "success");
+        window.location.href = "/meetings";
     });
 }
 
@@ -130,6 +131,7 @@ function bindSignupForm() {
             return;
         }
         setMessage(message, "회원가입에 성공했습니다.", "success");
+        window.location.href = "/login";
     });
 }
 

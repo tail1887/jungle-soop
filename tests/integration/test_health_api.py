@@ -11,8 +11,16 @@ def test_health_endpoint(client):
 @pytest.mark.integration
 def test_index_endpoint(client):
     response = client.get("/")
-    assert response.status_code == 200
-    assert b"Jungle Soop" in response.data
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
+
+
+@pytest.mark.integration
+def test_index_redirects_to_meetings_when_access_token_exists(client):
+    client.set_cookie("access_token", "dummy-token")
+    response = client.get("/")
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/meetings")
 
 
 @pytest.mark.integration
@@ -50,6 +58,7 @@ def test_signup_page_has_auth_form_and_message(client):
 
 @pytest.mark.integration
 def test_default_pages_show_logout_button_in_nav(client):
-    response = client.get("/")
+    response = client.get("/meetings")
     assert response.status_code == 200
     assert b"id=\"nav-logout-button\"" in response.data
+    assert b"/static/js/nav.js" in response.data

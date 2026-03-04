@@ -1,10 +1,12 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 
 def register_routes(app: Flask) -> None:
     @app.get("/")
     def index():
-        return render_template("index.html")
+        if request.cookies.get("access_token"):
+            return redirect(url_for("meeting_list"))
+        return redirect(url_for("login"))
 
     @app.get("/login")
     def login():
