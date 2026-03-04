@@ -1082,6 +1082,12 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] feat: `create_app()`에서 `MONGO_URI`, `MONGO_DB_NAME` 초기화
 - [x] test: DB 연결 레이어 단위 테스트 추가
 
+#### ⚙️ Branch: `feature/backend-handcoding-kit` (백엔드 손코딩 골격)
+- [x] feat: `app/api`, `app/services`, `app/models`, `app/middleware` 골격 추가
+- [x] feat: 인증/모임 API 엔드포인트 스켈레톤 추가
+- [x] test: 브랜치별 통합 테스트 템플릿 파일 추가
+- [x] docs: `docs/backend-handcoding-workbook.md` 교재 파일 추가
+
 #### 🌿 Branch: `feature/auth-signup` (회원가입)
 - [ ] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
 - [ ] feat: 입력값 검증/중복 이메일 검증
