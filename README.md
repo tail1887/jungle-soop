@@ -1063,7 +1063,7 @@ docker compose -f docker/docker-compose.test.yml down -v
     - `main` push 시 EC2 SSH 접속 후 배포 자동화
     - `workflow_dispatch`로 수동 배포 가능
   - **배포 스크립트**: `scripts/deploy.sh`
-    - 서버에서 레포 동기화 후 `docker compose up -d --build` 실행
+    - 서버에서 레포를 `origin/main` 기준으로 강제 동기화 후 `docker compose up -d --build` 실행
     - Docker/Compose 미설치 시 서버에서 자동 설치 후 배포 진행
   - **필수 GitHub Secrets**
     - `EC2_HOST`: EC2 호스트 (IP 또는 DNS)
