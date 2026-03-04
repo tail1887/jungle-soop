@@ -1,18 +1,20 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 
 def register_routes(app: Flask) -> None:
     @app.get("/")
     def index():
-        return render_template("index.html")
+        if request.cookies.get("access_token"):
+            return redirect(url_for("meeting_list"))
+        return redirect(url_for("login"))
 
     @app.get("/login")
     def login():
-        return render_template("login.html")
+        return render_template("login.html", hide_nav=True)
 
     @app.get("/signup")
     def signup():
-        return render_template("signup.html")
+        return render_template("signup.html", hide_nav=True)
 
     @app.get("/meetings")
     def meeting_list():
