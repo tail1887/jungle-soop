@@ -24,6 +24,12 @@ body {
     margin-left: 12px;
 }
 
+.nav-button {
+    margin-left: 12px;
+    padding: 8px 12px;
+    background: #374151;
+}
+
 .container {
     max-width: 800px;
     margin: 24px auto;
@@ -56,4 +62,23 @@ button {
     background: #2563eb;
     color: #ffffff;
     cursor: pointer;
+}
+
+.helper-text {
+    margin-top: 0;
+    color: #4b5563;
+}
+
+.form-message {
+    min-height: 20px;
+    margin: 0;
+    color: #374151;
+}
+
+.form-message.is-error {
+    color: #dc2626;
+}
+
+.form-message.is-success {
+    color: #059669;
 }
