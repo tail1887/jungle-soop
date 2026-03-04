@@ -12,8 +12,7 @@ def test_index_route_returns_ok():
 
     response = client.get("/")
     assert response.status_code == 200
-    payload = response.get_json()
-    assert payload["service"] == "jungle-soop"
+    assert b"Jungle Soop" in response.data
 
 
 def test_health_route_returns_ok():
