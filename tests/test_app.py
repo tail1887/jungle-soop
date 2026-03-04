@@ -11,8 +11,8 @@ def test_index_route_returns_ok():
     client = app.test_client()
 
     response = client.get("/")
-    assert response.status_code == 200
-    assert b"Jungle Soop" in response.data
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
 
 
 def test_health_route_returns_ok():

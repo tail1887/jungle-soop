@@ -1,6 +1,14 @@
-def find_by_email(db, email):  #사용자가 존재하는지 확인해줌
-    return db.users.find_one({"email": email})
+from flask import current_app
 
-def create_user(db, user_data): #신규 사용자 넣고 id 리턴
-    result = db.users.insert_one(user_data)
-    return str(result.inserted_id)
+from app.db import get_database
+
+
+class UserRepository:
+    @staticmethod
+    def find_by_email(email: str):
+        return get_database(current_app).users.find_one({"email": email})
+
+    @staticmethod
+    def create_user(user_doc: dict):
+        result = get_database(current_app).users.insert_one(user_doc)
+        return str(result.inserted_id)

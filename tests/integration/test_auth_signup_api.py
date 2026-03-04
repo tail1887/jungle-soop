@@ -1,33 +1,54 @@
 import pytest
-import requests
-import time
 
-BASE_URL = "http://127.0.0.1:5000/api/v1/auth"
+from app.db import get_database
 
-unique_email = f"jungle_{int(time.time())}@jungle.com"
 
-def test_signup_success():
-    payload = {
-        "email": unique_email,
+@pytest.fixture(autouse=True)
+def clear_users(client):
+    db = get_database(client.application)
+    db.users.delete_many({})
+    yield
+    db.users.delete_many({})
+
+
+def _signup_payload(email: str) -> dict:
+    return {
+        "email": email,
         "password": "password123",
-        "nickname": "정글러"
+        "nickname": "정글러",
     }
-    response = requests.post(f"{BASE_URL}/signup", json=payload)
+
+
+@pytest.mark.integration
+def test_signup_success(client):
+    response = client.post("/api/v1/auth/signup", json=_signup_payload("signup_ok@jungle.com"))
+
     assert response.status_code == 201
-    assert response.json()["success"] is True
-    assert "user_id" in response.json()["data"]
+    body = response.get_json()
+    assert body["success"] is True
+    assert "user_id" in body["data"]
 
-def test_signup_duplicate_email():
-    payload = {
-        "email": unique_email,
-        "password": "password123",
-        "nickname": "정글러"
-    }
-    response = requests.post(f"{BASE_URL}/signup", json=payload)
-    assert response.status_code == 409
-    assert response.json()["success"] is False
 
-def test_signup_invalid_input():
-    payload = {"email": "no_password@test.com"}
-    response = requests.post(f"{BASE_URL}/signup", json=payload)
+@pytest.mark.integration
+def test_signup_duplicate_email(client):
+    email = "signup_dup@jungle.com"
+    first = client.post("/api/v1/auth/signup", json=_signup_payload(email))
+    assert first.status_code == 201
+
+    second = client.post("/api/v1/auth/signup", json=_signup_payload(email))
+    assert second.status_code == 409
+    body = second.get_json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "EMAIL_ALREADY_EXISTS"
+
+
+@pytest.mark.integration
+def test_signup_invalid_input(client):
+    response = client.post(
+        "/api/v1/auth/signup",
+        json={"email": "invalid_input@jungle.com", "nickname": "정글러"},
+    )
     assert response.status_code == 400
+    body = response.get_json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "INVALID_INPUT"

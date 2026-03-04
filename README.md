@@ -25,7 +25,7 @@
 
 1. **회원가입/로그인 기능**
   - 사용자 인증을 통해 개인화된 모임 참여 경험 제공
-  - 세션 또는 JWT 기반 인증 방식 확장 가능
+  - JWT 기반 인증으로 보호 API 접근 제어
 2. **모임 생성 기능**
   - 모임 제목, 시간, 장소, 인원 등 핵심 정보 등록
   - 짧은 입력만으로 즉시 게시 가능
@@ -266,7 +266,7 @@ sequenceDiagram
     D-->>F: user document
     F->>F: 비밀번호 검증
     alt 인증 성공
-        F-->>C: 200 OK + session 설정
+        F-->>C: 200 OK + access_token 발급
     else 인증 실패
         F-->>C: 401 Unauthorized
     end
@@ -274,7 +274,7 @@ sequenceDiagram
 
 
 
-- **핵심 포인트**: 로그인 성공 시 인증 상태를 세션으로 유지하여 이후 요청에서 사용자 식별을 수행합니다.
+- **핵심 포인트**: 로그인 성공 시 JWT를 발급하고, 이후 요청에서 `Authorization: Bearer <token>` 헤더로 사용자 식별을 수행합니다.
 
 #### 2) 모임 생성 흐름
 
@@ -342,7 +342,7 @@ sequenceDiagram
 - **권한 제어**: 작성자 본인만 수정/삭제 가능하도록 서버에서 최종 검증
 - **유효성 검증**: 클라이언트 검증과 별개로 서버 측 검증을 필수 적용
 - **에러 응답 표준화**: 상태코드 + 메시지 형식 통일로 프론트 처리 단순화
-- **확장성 고려**: 인증(세션), 조회 필터, 알림 기능을 단계적으로 확장 가능한 구조 유지
+- **확장성 고려**: 인증(JWT), 조회 필터, 알림 기능을 단계적으로 확장 가능한 구조 유지
 
 ## 4. API 컨벤션
 
@@ -371,8 +371,8 @@ sequenceDiagram
 
 ### 3) 인증/인가 규칙
 
-- **인증 방식**: 세션 기반 인증 (HttpOnly Cookie, key: `session`)
-- **클라이언트 전송**: `credentials: include`
+- **인증 방식**: JWT Bearer 토큰 인증
+- **클라이언트 전송**: `Authorization: Bearer <access_token>`
 - **인증 필요 API**: 모임 생성/참여/수정/삭제, 로그아웃
 - **인가 규칙**: 모임 수정/삭제는 작성자(`author_id`)만 가능
 
@@ -785,7 +785,7 @@ jungle-soop/
 ├─ app/                          # Flask 애플리케이션 루트
 │  ├─ __init__.py                # create_app(), extension 초기화
 │  ├─ config.py                  # 환경별 설정 클래스
-│  ├─ extensions.py              # db/session 등 확장 객체
+│  ├─ extensions.py              # db/auth 등 확장 객체
 │  ├─ models/                    # MongoDB 모델/리포지토리 레이어
 │  │  ├─ user_repository.py
 │  │  └─ meeting_repository.py
@@ -1077,6 +1077,17 @@ docker compose -f docker/docker-compose.test.yml down -v
   - **선택 GitHub Secrets**
     - `EC2_APP_DIR`: 서버 배포 디렉토리 (미설정 시 기본값 `~/jungle-soop`)
 
+#### ⚙️ Branch: `feature/db-connection-foundation` (DB 연결 기반 / 초기 세팅 우선)
+- [x] feat: `app/db.py` 추가 (Mongo 클라이언트/DB 핸들러)
+- [x] feat: `create_app()`에서 `MONGO_URI`, `MONGO_DB_NAME` 초기화
+- [x] test: DB 연결 레이어 단위 테스트 추가
+
+#### ⚙️ Branch: `feature/backend-handcoding-kit` (백엔드 손코딩 골격)
+- [x] feat: `app/api`, `app/services`, `app/models`, `app/middleware` 골격 추가
+- [x] feat: 인증/모임 API 엔드포인트 스켈레톤 추가
+- [x] test: 브랜치별 통합 테스트 템플릿 파일 추가
+- [x] docs: `docs/backend-handcoding-workbook.md` 교재 파일 추가
+
 #### 🌿 Branch: `feature/auth-signup` (회원가입)
 - [ ] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
 - [ ] feat: 입력값 검증/중복 이메일 검증
@@ -1085,11 +1096,11 @@ docker compose -f docker/docker-compose.test.yml down -v
 #### 🌿 Branch: `feature/auth-login-logout` (로그인/로그아웃)
 - [ ] feat: 백엔드 - `POST /api/v1/auth/login` 구현
 - [ ] feat: 백엔드 - `POST /api/v1/auth/logout` 구현
-- [ ] feat: 세션 생성/삭제 처리
+- [ ] feat: JWT(access/refresh) 발급/폐기 처리
 - [ ] test: 로그인/로그아웃 테스트
 
 #### 🌿 Branch: `feature/auth-guard` (인증/인가)
-- [ ] feat: 인증 미들웨어 구현 (세션 기반)
+- [ ] feat: 인증 미들웨어 구현 (JWT Bearer 기반)
 - [ ] feat: 작성자 권한 검증 로직 구현
 - [ ] fix: 인증/인가 실패 공통 에러 응답 적용
 - [ ] test: 401/403 케이스 테스트

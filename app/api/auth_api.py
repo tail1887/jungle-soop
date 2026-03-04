@@ -1,15 +1,26 @@
-from flask import Blueprint, request, jsonify, current_app
-from app.services import auth_service 
-from app.db import get_database 
- 
-auth_bp = Blueprint('auth', __name__, url_prefix='/api/v1/auth') #blueprint: flask에서 기능별로 코드를 나눔
+from flask import Blueprint, jsonify, request
 
-def format_response(is_success, result, status_code):
-    if is_success:
-        return jsonify({"success": True, "data": result}), status_code
-    return jsonify({"success": False, "error": result}), status_code
+from app.services.auth_service import AuthService
 
-@auth_bp.post('/signup')
-def api_signup():
-    db = get_database(current_app)
-    return format_response(*auth_service.signup(db, request.get_json()))
+auth_bp = Blueprint("auth_api", __name__, url_prefix="/api/v1/auth")
+
+
+@auth_bp.post("/signup")
+def signup():
+    payload = request.get_json(silent=True) or {}
+    result = AuthService.signup(payload)
+    return jsonify(result["body"]), result["status_code"]
+
+
+@auth_bp.post("/login")
+def login():
+    payload = request.get_json(silent=True) or {}
+    result = AuthService.login(payload)
+    return jsonify(result["body"]), result["status_code"]
+
+
+@auth_bp.post("/logout")
+def logout():
+    # TODO: feature/auth-login-logout에서 세션 삭제 처리 구현
+    result = AuthService.logout()
+    return jsonify(result["body"]), result["status_code"]

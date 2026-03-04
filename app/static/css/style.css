@@ -24,6 +24,12 @@ body {
     margin-left: 12px;
 }
 
+.nav-button {
+    margin-left: 12px;
+    padding: 8px 12px;
+    background: #374151;
+}
+
 .container {
     max-width: 800px;
     margin: 24px auto;
@@ -56,4 +62,68 @@ button {
     background: #2563eb;
     color: #ffffff;
     cursor: pointer;
+}
+
+.helper-text {
+    margin-top: 0;
+    color: #4b5563;
+}
+
+.form-message {
+    min-height: 20px;
+    margin: 0;
+    color: #374151;
+}
+
+.form-message.is-error {
+    color: #dc2626;
+}
+
+.form-message.is-success {
+    color: #059669;
+}
+
+.meeting-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.button-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.meeting-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.meeting-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    background: #f9fafb;
+}
+
+.meeting-item p {
+    margin: 6px 0 0;
+    color: #4b5563;
+}
+
+.meeting-detail {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #f9fafb;
 }
