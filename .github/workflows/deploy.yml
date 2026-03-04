@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "배포할 브랜치명"
+        required: false
+        default: "main"
+
+jobs:
+  deploy-ec2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            BRANCH="${{ github.event.inputs.branch }}"
+            if [ -z "$BRANCH" ]; then
+              BRANCH="main"
+            fi
+            export APP_DIR="${{ secrets.EC2_APP_DIR }}"
+            export REPO_URL="https://github.com/${{ github.repository }}.git"
+            export BRANCH
+            bash -s <<'EOF'
+            set -euo pipefail
+            APP_DIR="${APP_DIR:-$HOME/jungle-soop}"
+            REPO_URL="${REPO_URL}"
+            BRANCH="${BRANCH:-main}"
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch origin
+            git checkout "$BRANCH"
+            git pull origin "$BRANCH"
+
+            if [ -f ".env.example" ] && [ ! -f ".env" ]; then
+              cp .env.example .env
+            fi
+
+            docker compose -f docker/docker-compose.yml up -d --build
+            EOF
