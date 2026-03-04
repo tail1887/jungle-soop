@@ -60,6 +60,5 @@ jobs:
             fi
 
             cd "$APP_DIR"
-            chmod +x scripts/deploy.sh
             APP_DIR="$APP_DIR" REPO_URL="$REPO_URL" BRANCH="$BRANCH" bash scripts/deploy.sh
             EOF

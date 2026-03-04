@@ -19,7 +19,9 @@ cd "$APP_DIR"
 echo "[deploy] syncing repository..."
 git fetch origin
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+# 배포 서버의 로컬 변경 상태에 영향받지 않도록 원격 브랜치 상태로 강제 동기화
+git reset --hard "origin/$BRANCH"
+git clean -fd
 
 if [[ -f ".env.example" && ! -f ".env" ]]; then
   echo "[deploy] creating .env from .env.example"
