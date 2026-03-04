@@ -15,6 +15,8 @@ def create_app() -> Flask:
     init_mongo(app)
 
     from app.routes import register_routes
+    from app.api import register_api_routes
 
     register_routes(app)
+    register_api_routes(app)
     return app
