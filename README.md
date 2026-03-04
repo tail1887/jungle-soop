@@ -1081,7 +1081,6 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] feat: `app/db.py` 추가 (Mongo 클라이언트/DB 핸들러)
 - [x] feat: `create_app()`에서 `MONGO_URI`, `MONGO_DB_NAME` 초기화
 - [x] test: DB 연결 레이어 단위 테스트 추가
-- [ ] next: auth/meetings API에서 DB 레이어 실제 사용 시작
 
 #### 🌿 Branch: `feature/auth-signup` (회원가입)
 - [ ] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
