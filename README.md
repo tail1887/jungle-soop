@@ -1048,7 +1048,7 @@ docker compose -f docker/docker-compose.test.yml down -v
 #### ⚙️ Branch: `feature/test-unit-integration` (테스트 체계 / 초기 세팅 우선)
 - [x] test: 서비스 단위 테스트 기본 골격 작성
 - [x] test: API + DB 통합 테스트 기본 골격 작성
-- [ ] test: `docker/docker-compose.test.yml` 기준 테스트 통과 (Docker Desktop 실행 환경에서 확인 필요)
+- [x] test: `docker/docker-compose.test.yml` 기준 테스트 통과
 - [x] rule: 기능 브랜치에서 테스트 동시 작성 규칙 반영
 
 #### ⚙️ Branch: `feature/ci-github-actions` (CI / 초기 세팅 우선)
