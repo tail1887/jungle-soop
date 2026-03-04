@@ -1,6 +1,6 @@
 from flask import current_app
 from app.models.user_repository import find_by_email, create_user
-from app.utils.security import hash_password
+from app.utils.security import hash_password, check_password, generate_token
 
 def signup(db, payload):
     #이메일이나 패스워드가 채워지지 않은경우 false리턴
@@ -17,3 +17,20 @@ def signup(db, payload):
     }
     user_id = create_user(db, user_data)
     return True, {"user_id": user_id}, 201
+
+def login(db, payload):
+    user = find_by_email(db, payload.get('email'))
+    if not user or not check_password(user['password'], payload.get('password')):
+        return False, {"code": "LOGIN_FAILED", "message": "정보가 일치하지 않습니다."}, 401
+
+    access_token = generate_token(str(user["_id"]), expires_in_hours=1)
+    refresh_token = generate_token(str(user["_id"]), expires_in_hours=12) 
+    
+    return True, {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user_id": str(user["_id"])
+    }, 200
+
+def logout():
+    return True, {"message": "성공적으로 로그아웃 했습니다."}, 200
