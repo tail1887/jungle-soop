@@ -57,3 +57,22 @@ button {
     color: #ffffff;
     cursor: pointer;
 }
+
+.helper-text {
+    margin-top: 0;
+    color: #4b5563;
+}
+
+.form-message {
+    min-height: 20px;
+    margin: 0;
+    color: #374151;
+}
+
+.form-message.is-error {
+    color: #dc2626;
+}
+
+.form-message.is-success {
+    color: #059669;
+}
