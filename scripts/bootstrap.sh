@@ -40,3 +40,4 @@ fi
 echo
 echo "완료: 개발 시작 준비가 끝났습니다."
 echo "다음 명령(현재 셸 세션): source .venv/bin/activate"
+echo "로컬 테스트 실행: bash ./scripts/test-local.sh"

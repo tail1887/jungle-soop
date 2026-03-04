@@ -50,3 +50,4 @@ else {
 Write-Host ""
 Write-Host "완료: 개발 시작 준비가 끝났습니다." -ForegroundColor Green
 Write-Host "다음 명령(현재 PowerShell 세션): .\.venv\Scripts\Activate.ps1"
+Write-Host "로컬 테스트 실행: .\scripts\test-local.ps1"

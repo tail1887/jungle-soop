@@ -936,7 +936,7 @@ docker compose -f docker/docker-compose.yml down
 
 - 개발자: 기능 작업 중 `unit` + 필요한 `integration` 로컬 실행
 - PR 전: `docker/docker-compose.test.yml` 기반 통합 테스트 1회 실행
-- CI: PR/push 시 Docker 기반 테스트 실행
+- CI: PR/push 시 `pytest` + Docker 테스트 자동 실행
 - CD: `main` 브랜치 머지(또는 push) 시 단일 EC2 서버 자동 배포
 
 ### 테스트 실행 방법
@@ -949,30 +949,35 @@ docker compose -f docker/docker-compose.yml down
 PowerShell:
 
 ```powershell
-.\scripts\bootstrap.ps1
-.\.venv\Scripts\Activate.ps1
-python -m pytest -q
+.\scripts\test-local.ps1
 ```
 
 macOS / Linux:
 
 ```bash
-bash ./scripts/bootstrap.sh
-source .venv/bin/activate
-python -m pytest -q
+bash ./scripts/test-local.sh
 ```
 
 #### 2) 특정 테스트만 실행
 
+```powershell
+.\scripts\test-local.ps1 tests/unit -q
+.\scripts\test-local.ps1 tests/integration -q
+```
+
 ```bash
-python -m pytest tests/unit -q
-python -m pytest tests/integration -q
+bash ./scripts/test-local.sh tests/unit -q
+bash ./scripts/test-local.sh tests/integration -q
 ```
 
 #### 3) 커버리지 포함 실행
 
+```powershell
+.\scripts\test-local.ps1 --cov=app --cov-report=term-missing
+```
+
 ```bash
-python -m pytest --cov=app --cov-report=term-missing
+bash ./scripts/test-local.sh --cov=app --cov-report=term-missing
 ```
 
 #### 4) Docker 테스트 실행
