@@ -9,12 +9,13 @@
 <body>
     <header class="site-header">
         <h1><a href="{{ url_for('index') }}">Jungle Soop</a></h1>
+        {% if not hide_nav %}
         <nav>
-            <a href="{{ url_for('login') }}">로그인</a>
-            <a href="{{ url_for('signup') }}">회원가입</a>
             <a href="{{ url_for('meeting_list') }}">모임 목록</a>
             <a href="{{ url_for('meeting_new') }}">모임 만들기</a>
+            <button id="nav-logout-button" class="nav-button" type="button">로그아웃</button>
         </nav>
+        {% endif %}
     </header>
     <main class="container">
         {% block content %}{% endblock %}

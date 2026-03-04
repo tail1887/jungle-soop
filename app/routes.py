@@ -8,11 +8,11 @@ def register_routes(app: Flask) -> None:
 
     @app.get("/login")
     def login():
-        return render_template("login.html")
+        return render_template("login.html", hide_nav=True)
 
     @app.get("/signup")
     def signup():
-        return render_template("signup.html")
+        return render_template("signup.html", hide_nav=True)
 
     @app.get("/meetings")
     def meeting_list():

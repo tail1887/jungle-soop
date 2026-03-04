@@ -11,9 +11,12 @@
         <input id="signup-email" name="email" type="email" placeholder="example@jungle.soop" required>
         <label for="signup-password">비밀번호</label>
         <input id="signup-password" name="password" type="password" placeholder="비밀번호 입력" required>
+        <label for="signup-password-confirm">비밀번호 확인</label>
+        <input id="signup-password-confirm" name="password_confirm" type="password" placeholder="비밀번호 다시 입력" required>
         <p id="signup-message" class="form-message" role="alert" aria-live="polite"></p>
-        <button type="submit">가입하기</button>
+        <button id="signup-submit-button" type="submit">가입하기</button>
     </form>
+    <p class="helper-text">이미 계정이 있다면 <a href="{{ url_for('login') }}">로그인</a>하세요.</p>
 </section>
 {% endblock %}
 {% block scripts %}

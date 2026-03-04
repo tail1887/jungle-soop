@@ -31,6 +31,8 @@ def test_login_page_has_auth_form_and_message(client):
     assert response.status_code == 200
     assert b'id="login-form"' in response.data
     assert b'id="login-message"' in response.data
+    assert b'id="login-submit-button"' in response.data
+    assert b"id=\"nav-logout-button\"" not in response.data
     assert b"/static/js/auth.js" in response.data
 
 
@@ -40,4 +42,14 @@ def test_signup_page_has_auth_form_and_message(client):
     assert response.status_code == 200
     assert b'id="signup-form"' in response.data
     assert b'id="signup-message"' in response.data
+    assert b'id="signup-password-confirm"' in response.data
+    assert b'id="signup-submit-button"' in response.data
+    assert b"id=\"nav-logout-button\"" not in response.data
     assert b"/static/js/auth.js" in response.data
+
+
+@pytest.mark.integration
+def test_default_pages_show_logout_button_in_nav(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"id=\"nav-logout-button\"" in response.data
