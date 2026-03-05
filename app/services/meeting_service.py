@@ -81,7 +81,15 @@ class MeetingService:
                 },
             }
 
-        allowed = {"title", "description", "place", "scheduled_at", "deadline_at", "max_capacity"}
+        allowed = {
+            "title",
+            "description",
+            "place",
+            "scheduled_at",
+            "deadline_at",
+            "max_capacity",
+            "status",
+        }
         update_doc = {k: v for k, v in payload.items() if k in allowed}
         if not update_doc:
             return {
@@ -91,6 +99,19 @@ class MeetingService:
                     "error": {
                         "code": "MEETING_INVALID_PAYLOAD",
                         "message": "수정할 필드가 없습니다.",
+                    },
+                },
+            }
+
+        status = update_doc.get("status")
+        if status is not None and status not in {"open", "closed"}:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": "status는 open 또는 closed만 허용됩니다.",
                     },
                 },
             }
@@ -275,6 +296,18 @@ class MeetingService:
                     "error": {
                         "code": "ALREADY_JOINED",
                         "message": "이미 참여한 모임입니다.",
+                    },
+                },
+            }
+
+        if meeting.get("status", "open") == "closed":
+            return {
+                "status_code": 409,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_CLOSED",
+                        "message": "이미 마감된 모임입니다.",
                     },
                 },
             }

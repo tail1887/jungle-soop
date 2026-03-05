@@ -87,6 +87,17 @@ function readFormField(form, names) {
     return "";
 }
 
+function toDatetimeLocalValue(value) {
+    if (!value) {
+        return "";
+    }
+    const normalized = String(value);
+    if (normalized.length >= 16) {
+        return normalized.slice(0, 16);
+    }
+    return normalized;
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -314,17 +325,35 @@ async function requestJoinAction(meetingId, method) {
     return fetchJson(`/api/v1/meetings/${meetingId}/join`, { method });
 }
 
-function bindOwnerActions(messageElement) {
+function bindOwnerActions(meetingId, messageElement) {
     const editButton = document.getElementById("meeting-edit-button");
     const closeButton = document.getElementById("meeting-close-button");
     if (editButton) {
         editButton.addEventListener("click", () => {
-            setUiMessage(messageElement, "정보수정 기능은 다음 단계에서 연결됩니다.", "");
+            window.location.href = `/meetings/${meetingId}/edit`;
         });
     }
     if (closeButton) {
-        closeButton.addEventListener("click", () => {
-            setUiMessage(messageElement, "조기마감 기능은 다음 단계에서 연결됩니다.", "");
+        closeButton.addEventListener("click", async () => {
+            closeButton.disabled = true;
+            setUiMessage(messageElement, "모임을 조기마감하는 중...", "");
+            try {
+                const result = await fetchJson(`/api/v1/meetings/${meetingId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: "closed" }),
+                });
+                if (!result.ok) {
+                    setUiMessage(messageElement, formatApiError(result, "조기마감에 실패했습니다."), "error");
+                    return;
+                }
+                await loadMeetingDetail({ skipSuccessMessage: true });
+                setUiMessage(messageElement, "모임이 조기마감되었습니다.", "success");
+            } catch (_error) {
+                setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
+            } finally {
+                closeButton.disabled = false;
+            }
         });
     }
 }
@@ -447,16 +476,90 @@ function bindMeetingDetailPage() {
     const meetingId = document.getElementById("meeting-detail-root")?.dataset.meetingId;
     const messageElement = document.getElementById("meeting-detail-message");
     if (meetingId && messageElement) {
-        bindOwnerActions(messageElement);
+        bindOwnerActions(meetingId, messageElement);
         bindMeetingJoinActions(meetingId, messageElement);
     }
     loadMeetingDetail();
+}
+
+function bindMeetingEditPage() {
+    const root = document.getElementById("meeting-edit-root");
+    const form = document.getElementById("meeting-edit-form");
+    const messageElement = document.getElementById("meeting-edit-message");
+    const submitButton = document.getElementById("meeting-edit-submit-button");
+    const meetingId = root?.dataset.meetingId;
+    if (!root || !form || !messageElement || !meetingId) {
+        return;
+    }
+
+    const fillForm = (meeting) => {
+        const titleField = form.elements.namedItem("title");
+        const scheduledAtField = form.elements.namedItem("scheduled_at");
+        const deadlineAtField = form.elements.namedItem("deadline_at");
+        const placeField = form.elements.namedItem("place");
+        const descriptionField = form.elements.namedItem("description");
+        const maxCapacityField = form.elements.namedItem("max_capacity");
+        if (titleField && "value" in titleField) titleField.value = meeting.title || "";
+        if (scheduledAtField && "value" in scheduledAtField) scheduledAtField.value = toDatetimeLocalValue(meeting.scheduled_at || "");
+        if (deadlineAtField && "value" in deadlineAtField) deadlineAtField.value = toDatetimeLocalValue(meeting.deadline_at || meeting.scheduled_at || "");
+        if (placeField && "value" in placeField) placeField.value = meeting.place || "";
+        if (descriptionField && "value" in descriptionField) descriptionField.value = meeting.description || "";
+        if (maxCapacityField && "value" in maxCapacityField) maxCapacityField.value = String(meeting.max_capacity || 4);
+    };
+
+    const loadForEdit = async () => {
+        setUiMessage(messageElement, "수정할 모임 정보를 불러오는 중...", "");
+        try {
+            const result = await fetchJson(`/api/v1/meetings/${meetingId}`);
+            if (!result.ok) {
+                setUiMessage(messageElement, formatApiError(result, "모임 정보를 불러오지 못했습니다."), "error");
+                return;
+            }
+            fillForm(result.data?.data || {});
+            setUiMessage(messageElement, "모임 정보를 불러왔습니다.", "success");
+        } catch (_error) {
+            setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
+        }
+    };
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = parseCreateFormPayload(form);
+        const validationMessage = validateCreateForm(payload);
+        if (validationMessage) {
+            setUiMessage(messageElement, validationMessage, "error");
+            return;
+        }
+
+        submitButton.disabled = true;
+        setUiMessage(messageElement, "모임 수정 요청 중...", "");
+        try {
+            const result = await fetchJson(`/api/v1/meetings/${meetingId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!result.ok) {
+                setUiMessage(messageElement, formatApiError(result, "모임 수정에 실패했습니다."), "error");
+                return;
+            }
+            setUiMessage(messageElement, "모임이 수정되었습니다. 상세 페이지로 이동합니다.", "success");
+            window.location.href = `/meetings/${meetingId}`;
+        } catch (_error) {
+            setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+
+    loadForEdit();
 }
 
 function initMeetingsPage() {
     bindMeetingsListPage();
     bindMeetingCreatePage();
     bindMeetingDetailPage();
+    bindMeetingEditPage();
 }
 
 if (document.readyState === "loading") {

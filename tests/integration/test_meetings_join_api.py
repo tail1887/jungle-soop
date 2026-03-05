@@ -109,3 +109,35 @@ def test_join_meeting_conflict_when_full(client):
     body = response.get_json()
     assert body["success"] is False
     assert body["error"]["code"] == "MEETING_FULL"
+
+
+@pytest.mark.integration
+def test_join_meeting_conflict_when_closed(client):
+    meeting_id = _create_meeting(
+        client,
+        "author1",
+        {
+            "title": "마감된 모임",
+            "description": "설명",
+            "place": "기숙사",
+            "scheduled_at": "2026-08-05T12:00:00+09:00",
+            "max_capacity": 4,
+        },
+    )
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = "author1"
+    close_res = client.patch(
+        f"/api/v1/meetings/{meeting_id}",
+        json={"status": "closed"},
+        headers=_auth_headers(),
+    )
+    assert close_res.status_code == 200
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user2"
+    response = client.post(f"/api/v1/meetings/{meeting_id}/join", headers=_auth_headers())
+    assert response.status_code == 409
+    body = response.get_json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "MEETING_CLOSED"
