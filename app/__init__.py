@@ -12,10 +12,11 @@ def create_app() -> Flask:
     app.config["MONGO_DB_NAME"] = os.getenv("MONGO_DB_NAME", "jungle_soop")
 
     from app.db import init_mongo
+
     init_mongo(app)
 
-    from app.routes import register_routes
     from app.api import register_api_routes
+    from app.routes import register_routes
 
     register_routes(app)
     register_api_routes(app)
