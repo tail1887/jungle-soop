@@ -510,8 +510,9 @@ sequenceDiagram
 #### `GET /api/v1/meetings`
 
 - Query
-`status=open|closed&sort=latest|deadline&order=asc|desc&page=1&limit=10&q=검색어`  
+`status=open|closed&sort=latest|deadline&order=asc|desc&page=1&limit=10&q=검색어&category=meal|exercise|study|other`
   - `q`: 모임 제목 부분 검색(대소문자 무시). 생략 시 전체 목록 조회.
+  - `category`: 카테고리 필터. `meal`(식사)|`exercise`(운동)|`study`(스터디)|`other`(기타). 생략 시 전체.
 - Success (`200`)
 
 ```json

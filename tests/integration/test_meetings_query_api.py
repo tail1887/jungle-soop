@@ -23,7 +23,7 @@ def _auth_headers(token: str = "test-token"):
     return {"Authorization": f"Bearer {token}"}
 
 
-def _create_meeting(client, user_id: str, title: str, scheduled_at: str):
+def _create_meeting(client, user_id: str, title: str, scheduled_at: str, category: str = "other"):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
@@ -33,6 +33,7 @@ def _create_meeting(client, user_id: str, title: str, scheduled_at: str):
         "place": "기숙사",
         "scheduled_at": scheduled_at,
         "max_capacity": 4,
+        "category": category,
     }
     response = client.post("/api/v1/meetings", json=payload, headers=_auth_headers())
     return response.get_json()["data"]["meeting_id"]
@@ -147,3 +148,23 @@ def test_list_meetings_filter_by_title_search(client):
     response_empty = client.get("/api/v1/meetings?q=없는검색어")
     assert response_empty.status_code == 200
     assert len(response_empty.get_json()["data"]["items"]) == 0
+
+
+@pytest.mark.integration
+def test_list_meetings_filter_by_category(client):
+    _create_meeting(client, "user1", "식사 모임", "2030-03-05T18:30:00+09:00", "meal")
+    _create_meeting(client, "user2", "운동 모임", "2030-03-04T18:30:00+09:00", "exercise")
+    _create_meeting(client, "user3", "스터디 모임", "2030-03-03T18:30:00+09:00", "study")
+
+    response = client.get("/api/v1/meetings?category=meal")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["success"] is True
+    items = body["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["title"] == "식사 모임"
+    assert items[0]["category"] == "meal"
+
+    response_all = client.get("/api/v1/meetings")
+    assert response_all.status_code == 200
+    assert len(response_all.get_json()["data"]["items"]) >= 3

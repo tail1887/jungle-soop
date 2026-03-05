@@ -6,6 +6,13 @@
     <p class="helper-text">API 응답 상태에 따라 목록 UI를 갱신합니다.</p>
     <div class="meeting-toolbar">
         <div id="meetings-toolbar-left" class="meeting-toolbar-group">
+            <select id="meetings-filter-category" aria-label="카테고리 필터">
+                <option value="">전체</option>
+                <option value="meal">식사</option>
+                <option value="exercise">운동</option>
+                <option value="study">스터디</option>
+                <option value="other">기타</option>
+            </select>
             <button id="meetings-filter-status" type="button" aria-label="상태 필터">모집중</button>
             <button id="meetings-sort-latest" type="button" aria-label="정렬">최신순</button>
         </div>

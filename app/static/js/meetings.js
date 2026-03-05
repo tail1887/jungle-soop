@@ -20,6 +20,8 @@ let listSortState = { sort: "latest", order: "desc" };
 let listFilterStatus = "open";
 /** 모임 제목 검색어 */
 let listSearchQuery = "";
+/** 카테고리 필터: ""(전체) | "meal" | "exercise" | "study" | "other" */
+let listCategoryFilter = "";
 
 function getCookieValue(name) {
     const target = `${name}=`;
@@ -168,6 +170,8 @@ async function loadMeetingsList(opts) {
     listFilterStatus = statusFilter;
     const searchQ = opts?.search ?? listSearchQuery;
     listSearchQuery = searchQ;
+    const categoryFilter = opts?.category ?? listCategoryFilter;
+    listCategoryFilter = categoryFilter;
 
     setUiMessage(messageElement, "모임 목록을 불러오는 중...", "");
     listElement.innerHTML = "";
@@ -181,6 +185,9 @@ async function loadMeetingsList(opts) {
         });
         if (searchQ) {
             params.set("q", searchQ);
+        }
+        if (categoryFilter) {
+            params.set("category", categoryFilter);
         }
         const result = await fetchJson(`/api/v1/meetings?${params}`);
         if (!result.ok) {
@@ -214,8 +221,12 @@ async function loadMeetingsList(opts) {
 }
 
 function updateListToolbarButtons() {
+    const categorySelect = document.getElementById("meetings-filter-category");
     const filterBtn = document.getElementById("meetings-filter-status");
     const sortBtn = document.getElementById("meetings-sort-latest");
+    if (categorySelect && "value" in categorySelect) {
+        categorySelect.value = listCategoryFilter || "";
+    }
     if (filterBtn) {
         filterBtn.textContent = listFilterStatus === "open" ? "모집중" : "마감됨";
         filterBtn.classList.add("is-active");
@@ -239,6 +250,15 @@ function bindMeetingsListPage() {
     if (filterBtn) {
         filterBtn.addEventListener("click", () => {
             listFilterStatus = listFilterStatus === "open" ? "closed" : "open";
+            loadMeetingsList();
+        });
+    }
+
+    const categorySelect = document.getElementById("meetings-filter-category");
+    if (categorySelect) {
+        categorySelect.value = listCategoryFilter || "";
+        categorySelect.addEventListener("change", () => {
+            listCategoryFilter = categorySelect.value || "";
             loadMeetingsList();
         });
     }
