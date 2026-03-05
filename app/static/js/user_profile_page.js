@@ -28,9 +28,10 @@
     async function loadUserProfile() {
         const root = document.getElementById("user-profile-root");
         const messageEl = document.getElementById("user-profile-message");
+        const avatarEl = document.getElementById("user-profile-avatar-image");
         const nicknameEl = document.getElementById("user-profile-nickname");
         const emailEl = document.getElementById("user-profile-email");
-        if (!root || !messageEl || !nicknameEl || !emailEl) {
+        if (!root || !messageEl || !avatarEl || !nicknameEl || !emailEl) {
             return;
         }
 
@@ -58,6 +59,7 @@
             }
 
             const data = result?.data || {};
+            avatarEl.src = data.profile_image_url || "";
             nicknameEl.textContent = data.nickname || "-";
             emailEl.textContent = data.email || "-";
             setMessage(messageEl, "프로필을 불러왔습니다.", "success");
