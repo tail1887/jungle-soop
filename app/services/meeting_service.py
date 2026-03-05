@@ -199,16 +199,22 @@ class MeetingService:
         all_meetings = MeetingRepository.find_all(filter_query)
 
         sort = query.get("sort", "latest")
+        order = query.get("order", "desc" if sort == "latest" else "asc")
+        if order not in ("asc", "desc"):
+            order = "desc" if sort == "latest" else "asc"
+        reverse = order == "desc"
+
         if sort == "deadline":
             sorted_meetings = sorted(
                 all_meetings,
                 key=lambda item: str(item.get("deadline_at") or item.get("scheduled_at", "")),
+                reverse=reverse,
             )
         else:
             sorted_meetings = sorted(
                 all_meetings,
                 key=lambda item: str(item.get("_id", "")),
-                reverse=True,
+                reverse=reverse,
             )
 
         start_idx = (page - 1) * limit

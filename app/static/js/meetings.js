@@ -15,6 +15,10 @@ function setUiMessage(element, text, type) {
 const ACCESS_TOKEN_KEY = "access_token";
 const DEFAULT_LIMIT = 10;
 
+let listSortState = { sort: "latest", order: "desc" };
+/** "open" | "closed" — 필터 버튼이 모집중이면 open, 마감됨이면 closed */
+let listFilterStatus = "open";
+
 function getCookieValue(name) {
     const target = `${name}=`;
     const cookies = document.cookie ? document.cookie.split(";") : [];
@@ -136,17 +140,30 @@ function createMeetingListItem(meeting) {
     return li;
 }
 
-async function loadMeetingsList() {
+async function loadMeetingsList(opts) {
     const listElement = document.getElementById("meetings-list");
     const messageElement = document.getElementById("meetings-list-message");
     if (!listElement || !messageElement) {
         return;
     }
 
+    const sort = opts?.sort ?? listSortState.sort;
+    const order = opts?.order ?? listSortState.order;
+    listSortState = { sort, order };
+    const statusFilter = opts?.status ?? listFilterStatus;
+    listFilterStatus = statusFilter;
+
     setUiMessage(messageElement, "모임 목록을 불러오는 중...", "");
     listElement.innerHTML = "";
     try {
-        const result = await fetchJson(`/api/v1/meetings?page=1&limit=${DEFAULT_LIMIT}&sort=latest`);
+        const params = new URLSearchParams({
+            page: "1",
+            limit: String(DEFAULT_LIMIT),
+            sort,
+            order,
+            status: statusFilter,
+        });
+        const result = await fetchJson(`/api/v1/meetings?${params}`);
         if (!result.ok) {
             setUiMessage(
                 messageElement,
@@ -159,16 +176,31 @@ async function loadMeetingsList() {
         const meetings = parseMeetingItems(result.data);
         if (meetings.length === 0) {
             setUiMessage(messageElement, "등록된 모임이 없습니다.", "");
-            return;
+        } else {
+            meetings.forEach((meeting) => {
+                listElement.appendChild(createMeetingListItem(meeting));
+            });
+            const total = result.data?.data?.pagination?.total ?? meetings.length;
+            setUiMessage(messageElement, `모임 목록을 불러왔습니다. (총 ${total}건)`, "success");
         }
-
-        meetings.forEach((meeting) => {
-            listElement.appendChild(createMeetingListItem(meeting));
-        });
-        const total = result.data?.data?.pagination?.total ?? meetings.length;
-        setUiMessage(messageElement, `모임 목록을 불러왔습니다. (총 ${total}건)`, "success");
     } catch (_error) {
         setUiMessage(messageElement, "네트워크 오류로 목록을 불러오지 못했습니다.", "error");
+    }
+
+    updateListToolbarButtons();
+}
+
+function updateListToolbarButtons() {
+    const filterBtn = document.getElementById("meetings-filter-status");
+    const sortBtn = document.getElementById("meetings-sort-latest");
+    if (filterBtn) {
+        filterBtn.textContent = listFilterStatus === "open" ? "모집중" : "마감됨";
+        filterBtn.classList.add("is-active");
+        filterBtn.setAttribute("aria-label", listFilterStatus === "open" ? "모집중 필터 (클릭 시 마감됨)" : "마감됨 필터 (클릭 시 모집중)");
+    }
+    if (sortBtn) {
+        sortBtn.classList.add("is-active");
+        sortBtn.textContent = `최신순 ${listSortState.order === "desc" ? "▼" : "▲"}`;
     }
 }
 
@@ -179,6 +211,24 @@ function bindMeetingsListPage() {
             loadMeetingsList();
         });
     }
+
+    const filterBtn = document.getElementById("meetings-filter-status");
+    if (filterBtn) {
+        filterBtn.addEventListener("click", () => {
+            listFilterStatus = listFilterStatus === "open" ? "closed" : "open";
+            loadMeetingsList();
+        });
+    }
+
+    const sortBtn = document.getElementById("meetings-sort-latest");
+    if (sortBtn) {
+        sortBtn.addEventListener("click", () => {
+            listSortState.order = listSortState.order === "desc" ? "asc" : "desc";
+            loadMeetingsList();
+        });
+    }
+
+    updateListToolbarButtons();
     loadMeetingsList();
 }
 
