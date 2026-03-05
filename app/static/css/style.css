@@ -124,6 +124,15 @@ button {
     gap: 6px;
 }
 
+.meeting-toolbar-group select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    font: inherit;
+    cursor: pointer;
+}
+
 .meeting-toolbar-group button {
     padding: 8px 12px;
     background: #e5e7eb;

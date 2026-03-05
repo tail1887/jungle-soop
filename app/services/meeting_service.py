@@ -331,6 +331,10 @@ class MeetingService:
         if status in {"open", "closed"}:
             filter_query["status"] = status
 
+        category = query.get("category")
+        if category and category in MEETING_CATEGORIES:
+            filter_query["category"] = category
+
         search_q = (query.get("q") or query.get("search") or "").strip()
         if search_q:
             filter_query["title"] = {"$regex": re.escape(search_q), "$options": "i"}
