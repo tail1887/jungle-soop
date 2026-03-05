@@ -1,7 +1,5 @@
 from flask import current_app
-
 from app.db import get_database
-
 
 class UserRepository:
     @staticmethod
