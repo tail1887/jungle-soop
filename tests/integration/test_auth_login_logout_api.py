@@ -59,7 +59,29 @@ def test_login_fails_with_missing_input(client):
 
 @pytest.mark.integration
 def test_logout_success(client):
-    response = client.post("/api/v1/auth/logout")
+    email = "logout-test@jungle.soop"
+    password = "password1234"
+
+    db = get_database(client.application)
+    db.users.insert_one(
+        {
+            "email": email,
+            "password_hash": hash_password(password),
+            "nickname": "로그아웃테스터",
+        }
+    )
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": password},
+    )
+    assert login_response.status_code == 200
+    token = login_response.get_json()["data"]["access_token"]
+
+    response = client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {token}"},
+    )
     assert response.status_code == 200
     body = response.get_json()
     assert body["success"] is True

@@ -10,13 +10,10 @@ def login_required(handler):
         auth_header = request.headers.get("Authorization", "")
         token = _extract_bearer_token(auth_header)
 
-        if not token:
+        if not token or not _is_valid_access_token(token):
             return _unauthorized_response()
 
         payload = decode_token(token)
-        if not payload:
-            return _unauthorized_response()
-
         user_id = payload.get("user_id")
         if not user_id:
             return _unauthorized_response()
@@ -64,3 +61,7 @@ def _unauthorized_response():
         ),
         401,
     )
+
+
+def _is_valid_access_token(token: str) -> bool:
+    return decode_token(token) is not None
