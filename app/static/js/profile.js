@@ -52,6 +52,36 @@ function formatApiError(result, fallbackMessage) {
     return result?.data?.error?.message || fallbackMessage;
 }
 
+function ensureProfileAvatarUi() {
+    const root = document.getElementById("profile-root");
+    if (!root) {
+        return;
+    }
+    const existingImage = document.getElementById("profile-avatar-image");
+    const existingForm = document.getElementById("profile-avatar-form");
+    if (existingImage && existingForm) {
+        return;
+    }
+
+    const avatarBlock = document.createElement("div");
+    avatarBlock.className = "profile-avatar-block";
+    avatarBlock.innerHTML = `
+        <img id="profile-avatar-image" class="profile-avatar-image" src="" alt="프로필 이미지">
+        <form id="profile-avatar-form" class="profile-avatar-form" novalidate>
+            <label for="profile-avatar-input">프로필 이미지</label>
+            <input id="profile-avatar-input" name="avatar" type="file" accept="image/*">
+            <button id="profile-avatar-save-button" type="submit">이미지 업로드</button>
+        </form>
+    `;
+
+    const anchor = root.querySelector(".helper-text");
+    if (anchor) {
+        root.insertBefore(avatarBlock, anchor);
+    } else {
+        root.appendChild(avatarBlock);
+    }
+}
+
 function createMeetingListItem(meeting) {
     const li = document.createElement("li");
     li.className = "meeting-item";
@@ -264,6 +294,7 @@ function initProfilePage() {
     if (!document.getElementById("profile-root")) {
         return;
     }
+    ensureProfileAvatarUi();
     loadMyProfile();
     bindProfileEditForm();
     bindProfileAvatarForm();
