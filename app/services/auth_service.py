@@ -1,11 +1,63 @@
 from app.models.user_repository import UserRepository
+from app.utils.security import hash_password
 from app.utils.security import check_password, generate_token
 
 
 class AuthService:
     @staticmethod
     def signup(payload: dict) -> dict:
-        return _not_implemented("AUTH_SIGNUP_NOT_IMPLEMENTED")
+        email = (payload.get("email") or "").strip()
+        password = payload.get("password") or ""
+        nickname = (payload.get("nickname") or "").strip()
+
+        if not email or not password or not nickname:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "INVALID_INPUT",
+                        "message": "필수값이 누락되었습니다.",
+                    },
+                },
+            }
+
+        if "@" not in email:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "INVALID_INPUT",
+                        "message": "이메일 형식을 확인해주세요.",
+                    },
+                },
+            }
+
+        if UserRepository.find_by_email(email):
+            return {
+                "status_code": 409,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "EMAIL_ALREADY_EXISTS",
+                        "message": "이미 가입된 이메일입니다.",
+                    },
+                },
+            }
+
+        user_id = UserRepository.create_user(
+            {
+                "email": email,
+                "password_hash": hash_password(password),
+                "nickname": nickname,
+            }
+        )
+
+        return {
+            "status_code": 201,
+            "body": {"success": True, "data": {"user_id": user_id}},
+        }
 
     @staticmethod
     def login(payload: dict) -> dict:
