@@ -11,8 +11,32 @@ function setUiMessage(element, text, type) {
     }
 }
 
+const ACCESS_TOKEN_KEY = "access_token";
+
+function getCookieValue(name) {
+    const target = `${name}=`;
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+    for (const rawCookie of cookies) {
+        const cookie = rawCookie.trim();
+        if (cookie.startsWith(target)) {
+            return decodeURIComponent(cookie.slice(target.length));
+        }
+    }
+    return "";
+}
+
+function getAccessToken() {
+    return localStorage.getItem(ACCESS_TOKEN_KEY) || getCookieValue(ACCESS_TOKEN_KEY);
+}
+
 async function fetchJson(url, options) {
-    const response = await fetch(url, options);
+    const token = getAccessToken();
+    const requestOptions = options || {};
+    const mergedHeaders = { ...(requestOptions.headers || {}) };
+    if (token) {
+        mergedHeaders.Authorization = `Bearer ${token}`;
+    }
+    const response = await fetch(url, { ...requestOptions, headers: mergedHeaders });
     const data = await response.json().catch(() => ({}));
     return { ok: response.ok, status: response.status, data };
 }
@@ -163,6 +187,11 @@ function bindMeetingCreatePage() {
                 body: JSON.stringify(payload),
             });
             if (!result.ok) {
+                if (result.status === 401) {
+                    setUiMessage(messageElement, "로그인이 필요합니다. 로그인 페이지로 이동합니다.", "error");
+                    window.location.href = "/login";
+                    return;
+                }
                 const msg =
                     result.data?.error?.message ||
                     "모임 생성 API가 아직 준비되지 않았습니다.";

@@ -1,3 +1,30 @@
+const ACCESS_TOKEN_KEY = "access_token";
+
+function getCookieValue(name) {
+    const target = `${name}=`;
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+    for (const rawCookie of cookies) {
+        const cookie = rawCookie.trim();
+        if (cookie.startsWith(target)) {
+            return decodeURIComponent(cookie.slice(target.length));
+        }
+    }
+    return "";
+}
+
+function saveAccessToken(token) {
+    if (!token) {
+        return;
+    }
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    // SSR 라우트(/)에서 로그인 상태를 판단할 수 있도록 쿠키도 함께 저장합니다.
+    document.cookie = `${ACCESS_TOKEN_KEY}=${encodeURIComponent(token)}; Max-Age=3600; path=/`;
+}
+
+function hasAccessToken() {
+    return Boolean(localStorage.getItem(ACCESS_TOKEN_KEY) || getCookieValue(ACCESS_TOKEN_KEY));
+}
+
 function setMessage(element, text, type) {
     if (!element) {
         return;
@@ -89,6 +116,15 @@ function bindLoginForm() {
             }
             return;
         }
+        const accessToken = result.data?.data?.access_token || result.data?.access_token || "";
+        if (!accessToken) {
+            setMessage(message, "토큰 발급에 실패했습니다. 다시 시도해주세요.", "error");
+            if (submitButton) {
+                submitButton.style.display = "";
+            }
+            return;
+        }
+        saveAccessToken(accessToken);
         setMessage(message, "로그인에 성공했습니다.", "success");
         window.location.href = "/meetings";
     });
@@ -136,6 +172,10 @@ function bindSignupForm() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    if (hasAccessToken() && window.location.pathname === "/login") {
+        window.location.replace("/meetings");
+        return;
+    }
     bindLoginForm();
     bindSignupForm();
 });
