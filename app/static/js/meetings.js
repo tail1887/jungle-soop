@@ -1,3 +1,4 @@
+(function () {
 function setUiMessage(element, text, type) {
     if (!element) {
         return;
@@ -133,12 +134,11 @@ async function loadMeetingsList() {
 
 function bindMeetingsListPage() {
     const refreshButton = document.getElementById("meetings-refresh-button");
-    if (!refreshButton) {
-        return;
+    if (refreshButton) {
+        refreshButton.addEventListener("click", () => {
+            loadMeetingsList();
+        });
     }
-    refreshButton.addEventListener("click", () => {
-        loadMeetingsList();
-    });
     loadMeetingsList();
 }
 
@@ -352,8 +352,15 @@ function bindMeetingDetailPage() {
     loadMeetingDetail();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function initMeetingsPage() {
     bindMeetingsListPage();
     bindMeetingCreatePage();
     bindMeetingDetailPage();
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initMeetingsPage);
+} else {
+    initMeetingsPage();
+}
+})();
