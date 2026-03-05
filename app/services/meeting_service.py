@@ -24,8 +24,8 @@ def _validate_meeting_datetimes(scheduled_at, deadline_at):
     Validate: both in future, deadline <= scheduled (미입력 시 deadline=scheduled 허용).
     Returns (True, None) or (False, error_message).
     """
-    from datetime import datetime
-    now = datetime.utcnow()
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if scheduled_at <= now:
         return False, "모임 일시는 현재 시간 이후로 설정해주세요."
     if deadline_at is not None and deadline_at <= now:
@@ -65,7 +65,7 @@ class MeetingService:
                 },
             }
 
-        from datetime import datetime
+        from datetime import datetime, timezone
         scheduled_dt = _parse_dt(payload.get("scheduled_at"))
         deadline_dt = _parse_dt(payload.get("deadline_at")) or scheduled_dt
         if scheduled_dt is None:
@@ -99,7 +99,7 @@ class MeetingService:
         meeting_doc["participants"] = [author_id]
         meeting_doc["deadline_at"] = meeting_doc.get("deadline_at") or meeting_doc["scheduled_at"]
         meeting_doc["status"] = "open"
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         meeting_doc["created_at"] = now
         meeting_doc["updated_at"] = now
 
@@ -176,7 +176,7 @@ class MeetingService:
                 },
             }
 
-        from datetime import datetime
+        from datetime import datetime, timezone
         # Validate datetimes if any is being updated
         if "scheduled_at" in update_doc or "deadline_at" in update_doc:
             effective_scheduled = update_doc.get("scheduled_at") or meeting.get("scheduled_at")
@@ -207,7 +207,7 @@ class MeetingService:
                     },
                 }
 
-        update_doc["updated_at"] = datetime.utcnow()
+        update_doc["updated_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
         updated = MeetingRepository.update_by_id(meeting_id, update_doc)
         if not updated:

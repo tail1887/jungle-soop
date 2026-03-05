@@ -40,9 +40,9 @@ def _create_meeting(client, user_id: str, title: str, scheduled_at: str):
 
 @pytest.mark.integration
 def test_list_meetings_success(client):
-    _create_meeting(client, "user1", "모임1", "2026-03-05T18:30:00+09:00")
-    _create_meeting(client, "user2", "모임2", "2026-03-04T18:30:00+09:00")
-    _create_meeting(client, "user3", "모임3", "2026-03-03T18:30:00+09:00")
+    _create_meeting(client, "user1", "모임1", "2030-03-05T18:30:00+09:00")
+    _create_meeting(client, "user2", "모임2", "2030-03-04T18:30:00+09:00")
+    _create_meeting(client, "user3", "모임3", "2030-03-03T18:30:00+09:00")
 
     response = client.get("/api/v1/meetings?sort=deadline&page=1&limit=2")
     assert response.status_code == 200
@@ -70,7 +70,7 @@ def test_get_meeting_detail_success(client):
         client,
         "user1",
         "상세 테스트 모임",
-        "2026-04-01T12:00:00+09:00",
+        "2030-04-01T12:00:00+09:00",
     )
 
     response = client.get(f"/api/v1/meetings/{meeting_id}")
@@ -90,7 +90,7 @@ def test_list_meetings_deadline_sort_uses_deadline_at(client):
         client,
         "user1",
         "마감 늦은 모임",
-        "2026-04-10T12:00:00+09:00",
+        "2030-04-10T12:00:00+09:00",
     )
 
     with client.session_transaction() as sess:
@@ -101,8 +101,8 @@ def test_list_meetings_deadline_sort_uses_deadline_at(client):
             "title": "마감 빠른 모임",
             "description": "설명",
             "place": "기숙사",
-            "scheduled_at": "2026-04-20T12:00:00+09:00",
-            "deadline_at": "2026-04-01T12:00:00+09:00",
+            "scheduled_at": "2030-04-20T12:00:00+09:00",
+            "deadline_at": "2030-04-01T12:00:00+09:00",
             "max_capacity": 4,
         },
         headers=_auth_headers(),
@@ -113,7 +113,7 @@ def test_list_meetings_deadline_sort_uses_deadline_at(client):
     items = response.get_json()["data"]["items"]
     assert len(items) >= 2
     assert items[0]["title"] == "마감 빠른 모임"
-    assert items[0]["deadline_at"] == "2026-04-01T12:00:00+09:00"
+    assert items[0]["deadline_at"] == "2030-04-01T12:00:00+09:00"
 
 
 @pytest.mark.integration
