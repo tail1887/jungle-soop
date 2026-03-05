@@ -22,6 +22,16 @@
         <button id="meeting-detail-refresh-button" type="button">상세 새로고침</button>
         <a class="button-link" href="{{ url_for('meeting_list') }}">목록으로</a>
     </div>
+    <section class="meeting-comments card">
+        <h3>댓글</h3>
+        <div id="meeting-comments-list" class="comments-list"></div>
+        <p id="meeting-comments-message" class="form-message" role="alert" aria-live="polite"></p>
+        <form id="meeting-comment-form" class="comment-form">
+            <label for="meeting-comment-body">댓글 작성</label>
+            <textarea id="meeting-comment-body" name="body" rows="3" placeholder="댓글을 입력하세요."></textarea>
+            <button type="submit">등록</button>
+        </form>
+    </section>
 </section>
 {% endblock %}
 {% block scripts %}
