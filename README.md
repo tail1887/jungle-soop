@@ -1053,6 +1053,7 @@ docker compose -f docker/docker-compose.test.yml down -v
 초기 세팅 브랜치(`setup-*`, `test-*`, `ci-*`)를 먼저 완료한 뒤,
 기능 브랜치에서 구현 + 테스트를 동시에 진행합니다.
 배포 환경은 미니 프로젝트 특성상 **단일 EC2 서버 1대**를 사용합니다.
+아래 체크리스트는 **완료 시점 기준(실제 머지 순서 최대한 반영)** 으로 관리합니다.
 
 #### 🌱 Branch: `main`
 - [x] Initial commit: 프로젝트 문서/기준 정리
@@ -1189,17 +1190,23 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] test: 프로필 화면 주요 시나리오 수동 테스트
 
 #### 🚀 Next Expansion Plan (팀 합의안)
-- [ ] 1) 프로필 이미지 업로드/표시 + 미등록 시 기본 아바타(결정적 더미) 적용
-- [ ] 2) 타인 프로필 조회 (`/profile/{user_id}`) + 공개 범위 기본 정책(이메일 비공개)
-- [ ] 3) 모임 상세 전용 게시글 시스템(작성/조회 권한: 작성자+참여자)
-- [ ] 4) Tailwind 기반 UI 리뉴얼(기능 확장 후 화면 단위로 점진 전환)
-- [ ] 5) 개발 문서 최종 정리 (API/스키마/운영 규칙 동기화)
-- [ ] 6) 발표자료(PPT) 정리 및 데모 시나리오 확정
+- [ ] 1) `feature/profile-avatar`  
+  프로필 이미지 업로드/표시 + 미등록 시 기본 아바타(결정적 더미) 적용
+- [ ] 2) `feature/profile-public-view`  
+  타인 프로필 조회 (`/profile/{user_id}`) + 공개 범위 기본 정책(이메일 비공개)
+- [ ] 3) `feature/meeting-posts`  
+  모임 상세 전용 게시글 시스템(작성/조회 권한: 작성자+참여자)
+- [ ] 4) `feature/ui-tailwind-refactor`  
+  Tailwind 기반 UI 리뉴얼(기능 확장 후 화면 단위로 점진 전환)
+- [ ] 5) `docs/final-project-docs`  
+  개발 문서 최종 정리 (API/스키마/운영 규칙 동기화)
+- [ ] 6) `docs/ppt-demo`  
+  발표자료(PPT) 정리 및 데모 시나리오 확정
 
 #### ⚙️ Branch: `feature/deploy-ec2` (배포)
-- [ ] feat: 단일 EC2 서버 배포 스크립트/절차 작성
-- [ ] feat: Docker 기반 배포 검증
-- [ ] docs: 배포/운영 체크리스트 문서화
+- [x] feat: 단일 EC2 서버 배포 스크립트/절차 작성
+- [x] feat: Docker 기반 배포 검증
+- [x] docs: 배포/운영 체크리스트 문서화
 
 #### 📝 Merge to `main`
 - [ ] 기능 브랜치 병합 완료
