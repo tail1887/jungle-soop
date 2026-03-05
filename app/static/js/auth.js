@@ -82,6 +82,28 @@ async function postJson(url, payload) {
     return { ok: response.ok, status: response.status, data };
 }
 
+async function hasValidAccessToken() {
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY) || getCookieValue(ACCESS_TOKEN_KEY);
+    if (!token) {
+        return false;
+    }
+    try {
+        const response = await fetch("/api/v1/profile/me", {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (response.status === 401) {
+            localStorage.removeItem(ACCESS_TOKEN_KEY);
+            document.cookie = `${ACCESS_TOKEN_KEY}=; Max-Age=0; path=/`;
+            return false;
+        }
+        return response.ok;
+    } catch (_error) {
+        return false;
+    }
+}
+
 function bindLoginForm() {
     const form = document.getElementById("login-form");
     const message = document.getElementById("login-message");
@@ -171,10 +193,13 @@ function bindSignupForm() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    if (hasAccessToken() && window.location.pathname === "/login") {
-        window.location.replace("/meetings");
-        return;
+document.addEventListener("DOMContentLoaded", async () => {
+    if (window.location.pathname === "/login") {
+        const validToken = await hasValidAccessToken();
+        if (validToken) {
+            window.location.replace("/meetings");
+            return;
+        }
     }
     bindLoginForm();
     bindSignupForm();
