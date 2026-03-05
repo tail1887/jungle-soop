@@ -199,6 +199,28 @@ button {
     background: #f9fafb;
 }
 
+.meeting-detail-author {
+    margin: 6px 0 10px;
+}
+
+.meeting-detail-author-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meeting-detail-author-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.meeting-detail-author-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
 .meeting-comments {
     margin-top: 16px;
 }

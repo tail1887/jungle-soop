@@ -675,6 +675,11 @@ def _serialize_meeting_summary(meeting: dict) -> dict:
 
 def _serialize_meeting_detail(meeting: dict) -> dict:
     from app.models.user_repository import UserRepository
+    from urllib.parse import quote
+
+    def _default_avatar_url(uid: str, nickname: str | None) -> str:
+        seed = quote(nickname or uid or "jungle-soop")
+        return f"https://api.dicebear.com/9.x/identicon/svg?seed={seed}"
 
     participants = meeting.get("participants") or []
     participant_list = []
@@ -683,6 +688,11 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         user = UserRepository.find_by_id(pid_str)
         nickname = (user.get("nickname", pid_str) if user else pid_str) or pid_str
         participant_list.append({"user_id": pid_str, "nickname": nickname})
+
+    author_id = str(meeting.get("author_id", ""))
+    author_user = UserRepository.find_by_id(author_id) if author_id else None
+    author_nickname = (author_user.get("nickname", author_id) if author_user else author_id) or author_id
+    author_profile_image_url = (author_user.get("profile_image_url") if author_user else "") or _default_avatar_url(author_id, author_nickname)
 
     return {
         "meeting_id": str(meeting.get("_id", "")),
@@ -697,7 +707,9 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "participants": participant_list,
         "max_capacity": meeting.get("max_capacity"),
         "status": meeting.get("status", "open"),
-        "author_id": str(meeting.get("author_id", "")),
+        "author_id": author_id,
+        "author_nickname": author_nickname,
+        "author_profile_image_url": author_profile_image_url,
     }
 
 
