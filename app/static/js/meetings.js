@@ -742,6 +742,7 @@ async function loadMeetingDetail(options) {
         renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
         updateCloseButtonState(meeting);
+        loadMeetingComments(meetingId);
         if (!options?.skipSuccessMessage) {
             setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
         }
@@ -763,8 +764,107 @@ function bindMeetingDetailPage() {
     if (meetingId && messageElement) {
         bindOwnerActions(meetingId, messageElement);
         bindMeetingJoinActions(meetingId, messageElement);
+        bindMeetingCommentForm(meetingId);
     }
     loadMeetingDetail();
+}
+
+async function loadMeetingComments(meetingId) {
+    const listEl = document.getElementById("meeting-comments-list");
+    const messageEl = document.getElementById("meeting-comments-message");
+    if (!listEl || !meetingId) return;
+    listEl.innerHTML = "";
+    try {
+        const result = await fetchJson(`/api/v1/meetings/${meetingId}/comments`);
+        if (!result.ok) {
+            if (messageEl) messageEl.textContent = "댓글을 불러오지 못했습니다.";
+            return;
+        }
+        const items = result.data?.data?.items || [];
+        const currentUserId = getCurrentUserId();
+        renderComments(listEl, items, meetingId, currentUserId);
+        if (messageEl) messageEl.textContent = items.length ? "" : "아직 댓글이 없습니다.";
+    } catch (_e) {
+        if (messageEl) messageEl.textContent = "댓글을 불러오지 못했습니다.";
+    }
+}
+
+function renderComments(container, items, meetingId, currentUserId) {
+    container.innerHTML = "";
+    if (!items.length) {
+        container.appendChild(document.createTextNode("댓글이 없습니다."));
+        return;
+    }
+    items.forEach((item) => {
+        const wrap = document.createElement("div");
+        wrap.className = "comment-item";
+        const author = item.author_nickname || item.author_id || "알 수 없음";
+        const timeStr = item.created_at ? new Date(item.created_at).toLocaleString("ko-KR") : "";
+        let html = `<div class="comment-body"><strong>${escapeHtml(author)}</strong> <span class="comment-time">${escapeHtml(timeStr)}</span><p class="comment-text">${escapeHtml(item.body)}</p>`;
+        if (currentUserId && String(item.author_id) === currentUserId) {
+            html += `<button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(item.comment_id)}">삭제</button>`;
+        }
+        html += "</div>";
+        wrap.innerHTML = html;
+        const deleteBtn = wrap.querySelector(".comment-delete-btn");
+        if (deleteBtn) {
+            deleteBtn.addEventListener("click", async () => {
+                if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
+                const res = await fetchJson(`/api/v1/meetings/${meetingId}/comments/${item.comment_id}`, { method: "DELETE" });
+                if (res.ok || res.status === 204) loadMeetingComments(meetingId);
+            });
+        }
+        if (item.replies && item.replies.length > 0) {
+            const repliesEl = document.createElement("div");
+            repliesEl.className = "comment-replies";
+            renderComments(repliesEl, item.replies, meetingId, currentUserId);
+            wrap.appendChild(repliesEl);
+        }
+        container.appendChild(wrap);
+    });
+}
+
+function escapeHtml(str) {
+    if (str == null) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function bindMeetingCommentForm(meetingId) {
+    const form = document.getElementById("meeting-comment-form");
+    const bodyInput = document.getElementById("meeting-comment-body");
+    const messageEl = document.getElementById("meeting-comments-message");
+    if (!form || !bodyInput || !meetingId) return;
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const body = (bodyInput.value || "").trim();
+        if (!body) {
+            if (messageEl) messageEl.textContent = "댓글 내용을 입력해주세요.";
+            return;
+        }
+        if (messageEl) messageEl.textContent = "등록 중...";
+        try {
+            const result = await fetchJson(`/api/v1/meetings/${meetingId}/comments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ body }),
+            });
+            if (!result.ok) {
+                if (result.status === 401) {
+                    if (messageEl) messageEl.textContent = "로그인이 필요합니다.";
+                    return;
+                }
+                if (messageEl) messageEl.textContent = result.data?.error?.message || "댓글 등록에 실패했습니다.";
+                return;
+            }
+            bodyInput.value = "";
+            if (messageEl) messageEl.textContent = "";
+            loadMeetingComments(meetingId);
+        } catch (_err) {
+            if (messageEl) messageEl.textContent = "댓글 등록에 실패했습니다.";
+        }
+    });
 }
 
 function bindMeetingEditPage() {
