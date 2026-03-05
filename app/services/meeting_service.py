@@ -1,13 +1,12 @@
 from app.models.meeting_repository import MeetingRepository
 
 
-class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현, 비즈니스 로직과 Repository 호출 담당
-    @staticmethod # TODO(feature/meetings-crud): create/update/delete 서비스 로직 구현
+class MeetingService:
+    @staticmethod
     def create(payload: dict) -> dict:
-        # simple validation of required fields
-        required = ["title", "place", "scheduled_at", "max_capacity"] # required fields per spec
-        missing = [k for k in required if k not in payload] # check if any required field is missing
-        if missing:# if there are missing fields, return 400 with error message
+        required = ["title", "place", "scheduled_at", "max_capacity"]
+        missing = [k for k in required if k not in payload]
+        if missing:
             return {
                 "status_code": 400,
                 "body": {
@@ -19,13 +18,11 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
                 },
             }
 
-        # prepare document with defaults
         from datetime import datetime
-        from flask import session # session에서 현재 로그인한 사용자 ID를 가져와 author_id로 설정, guard로 로그인 보장
+        from flask import session
 
         meeting_doc = payload.copy()
         meeting_doc.setdefault("description", "")
-        # 현재 로그인한 사용자 ID를 author_id로 설정 (guard로 로그인 보장)
         meeting_doc["author_id"] = session.get("user_id")
         meeting_doc["participants"] = []
         meeting_doc["status"] = "open"
@@ -45,10 +42,9 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
 
     @staticmethod
     def update(meeting_id: str, payload: dict) -> dict:
-        # 작성자 권한 확인
         from flask import session
 
-        meeting = MeetingRepository.find_by_id(meeting_id) # 존재 여부 확인 및 작성자 권한 검증
+        meeting = MeetingRepository.find_by_id(meeting_id)
 
         if not meeting:
             return {
@@ -61,7 +57,7 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
                     },
                 },
             }
-        if str(meeting.get("author_id")) != session.get("user_id"): # 작성자만 수정 가능하도록 검증, session에서 현재 로그인한 사용자 ID와 비교
+        if str(meeting.get("author_id")) != session.get("user_id"):
             return {
                 "status_code": 403,
                 "body": {
@@ -73,12 +69,9 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
                 },
             }
 
-        # do not allow updating of participants/status/author_id
-        # payload may be partial
         allowed = {"title", "description", "place", "scheduled_at", "max_capacity"}
         update_doc = {k: v for k, v in payload.items() if k in allowed}
         if not update_doc:
-            # nothing to update
             return {
                 "status_code": 400,
                 "body": {
@@ -96,7 +89,6 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
 
         updated = MeetingRepository.update_by_id(meeting_id, update_doc)
         if not updated:
-            # 이 케이스는 사실상 위에서 걸렸으므로 도달하지 않음
             return {
                 "status_code": 404,
                 "body": {
@@ -157,18 +149,83 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
                     },
                 },
             }
-        # on success we follow spec: 204 no body
         return {"status_code": 204, "body": None}
 
     @staticmethod
     def list(query: dict) -> dict:
-        # TODO(feature/meetings-query): 목록/필터/정렬/페이지네이션 구현
-        return _not_implemented("MEETING_LIST_NOT_IMPLEMENTED")
+        page = _to_positive_int(query.get("page"), default=1)
+        limit = _to_positive_int(query.get("limit"), default=10)
+
+        if limit > 100:
+            limit = 100
+
+        filter_query = {}
+        status = query.get("status")
+        if status in {"open", "closed"}:
+            filter_query["status"] = status
+
+        all_meetings = MeetingRepository.find_all(filter_query)
+
+        sort = query.get("sort", "latest")
+        if sort == "deadline":
+            sorted_meetings = sorted(
+                all_meetings,
+                key=lambda item: str(item.get("scheduled_at", "")),
+            )
+        else:
+            sorted_meetings = sorted(
+                all_meetings,
+                key=lambda item: str(item.get("_id", "")),
+                reverse=True,
+            )
+
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        paginated_meetings = sorted_meetings[start_idx:end_idx]
+
+        total_count = len(all_meetings)
+        items = [_serialize_meeting_summary(meeting) for meeting in paginated_meetings]
+
+        return {
+            "status_code": 200,
+            "body": {
+                "success": True,
+                "data": {
+                    "items": items,
+                    "pagination": {
+                        "page": page,
+                        "limit": limit,
+                        "total": total_count,
+                        "total_pages": (total_count + limit - 1) // limit,
+                    },
+                },
+                "message": "모임 목록 조회 성공",
+            },
+        }
 
     @staticmethod
     def get_detail(meeting_id: str) -> dict:
-        # TODO(feature/meetings-query): 상세 조회 구현
-        return _not_implemented("MEETING_DETAIL_NOT_IMPLEMENTED")
+        meeting = MeetingRepository.find_by_id(meeting_id)
+        if not meeting:
+            return {
+                "status_code": 404,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_NOT_FOUND",
+                        "message": "해당 모임을 찾을 수 없습니다.",
+                    },
+                },
+            }
+
+        return {
+            "status_code": 200,
+            "body": {
+                "success": True,
+                "data": _serialize_meeting_detail(meeting),
+                "message": "모임 상세 조회 성공",
+            },
+        }
 
     @staticmethod
     def join(meeting_id: str) -> dict:
@@ -191,4 +248,40 @@ def _not_implemented(code: str) -> dict:
                 "message": "아직 구현되지 않은 기능입니다.",
             },
         },
+    }
+
+
+def _to_positive_int(value, default: int) -> int:
+    try:
+        converted = int(value)
+    except (TypeError, ValueError):
+        return default
+    return converted if converted > 0 else default
+
+
+def _serialize_meeting_summary(meeting: dict) -> dict:
+    participants = meeting.get("participants") or []
+    return {
+        "meeting_id": str(meeting.get("_id", "")),
+        "title": meeting.get("title", ""),
+        "place": meeting.get("place", ""),
+        "scheduled_at": meeting.get("scheduled_at", ""),
+        "participant_count": len(participants),
+        "max_capacity": meeting.get("max_capacity"),
+        "status": meeting.get("status", "open"),
+    }
+
+
+def _serialize_meeting_detail(meeting: dict) -> dict:
+    participants = meeting.get("participants") or []
+    return {
+        "meeting_id": str(meeting.get("_id", "")),
+        "title": meeting.get("title", ""),
+        "description": meeting.get("description", ""),
+        "place": meeting.get("place", ""),
+        "scheduled_at": meeting.get("scheduled_at", ""),
+        "participant_count": len(participants),
+        "max_capacity": meeting.get("max_capacity"),
+        "status": meeting.get("status", "open"),
+        "author_id": str(meeting.get("author_id", "")),
     }
