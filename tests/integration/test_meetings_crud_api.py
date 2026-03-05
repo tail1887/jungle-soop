@@ -31,7 +31,7 @@ def test_create_meeting_success(client):
         "title": "저녁 같이 먹을 사람",
         "description": "분식집 가실 분 구해요.",
         "place": "기숙사 정문",
-        "scheduled_at": "2026-03-05T18:30:00+09:00",
+        "scheduled_at": "2026-12-05T18:30:00+09:00",
         "max_capacity": 4,
     }
     response = client.post("/api/v1/meetings", json=payload, headers=_auth_headers())
