@@ -61,6 +61,7 @@ def test_list_meetings_success(client):
     assert first["scheduled_at"] <= second["scheduled_at"]
     assert "meeting_id" in first
     assert "participant_count" in first
+    assert "deadline_at" in first
 
 
 @pytest.mark.integration
@@ -80,6 +81,39 @@ def test_get_meeting_detail_success(client):
     assert body["data"]["title"] == "상세 테스트 모임"
     assert body["data"]["participant_count"] == 1
     assert body["data"]["participants"] == ["user1"]
+    assert body["data"]["deadline_at"] == body["data"]["scheduled_at"]
+
+
+@pytest.mark.integration
+def test_list_meetings_deadline_sort_uses_deadline_at(client):
+    _create_meeting(
+        client,
+        "user1",
+        "마감 늦은 모임",
+        "2026-04-10T12:00:00+09:00",
+    )
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user2"
+    client.post(
+        "/api/v1/meetings",
+        json={
+            "title": "마감 빠른 모임",
+            "description": "설명",
+            "place": "기숙사",
+            "scheduled_at": "2026-04-20T12:00:00+09:00",
+            "deadline_at": "2026-04-01T12:00:00+09:00",
+            "max_capacity": 4,
+        },
+        headers=_auth_headers(),
+    )
+
+    response = client.get("/api/v1/meetings?sort=deadline&page=1&limit=10")
+    assert response.status_code == 200
+    items = response.get_json()["data"]["items"]
+    assert len(items) >= 2
+    assert items[0]["title"] == "마감 빠른 모임"
+    assert items[0]["deadline_at"] == "2026-04-01T12:00:00+09:00"
 
 
 @pytest.mark.integration

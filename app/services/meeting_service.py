@@ -37,6 +37,7 @@ class MeetingService:
         meeting_doc["author_id"] = author_id
         # The meeting author is considered an initial participant.
         meeting_doc["participants"] = [author_id]
+        meeting_doc["deadline_at"] = meeting_doc.get("deadline_at") or meeting_doc["scheduled_at"]
         meeting_doc["status"] = "open"
         now = datetime.utcnow()
         meeting_doc["created_at"] = now
@@ -80,7 +81,7 @@ class MeetingService:
                 },
             }
 
-        allowed = {"title", "description", "place", "scheduled_at", "max_capacity"}
+        allowed = {"title", "description", "place", "scheduled_at", "deadline_at", "max_capacity"}
         update_doc = {k: v for k, v in payload.items() if k in allowed}
         if not update_doc:
             return {
@@ -180,7 +181,7 @@ class MeetingService:
         if sort == "deadline":
             sorted_meetings = sorted(
                 all_meetings,
-                key=lambda item: str(item.get("scheduled_at", "")),
+                key=lambda item: str(item.get("deadline_at") or item.get("scheduled_at", "")),
             )
         else:
             sorted_meetings = sorted(
@@ -451,6 +452,7 @@ def _serialize_meeting_summary(meeting: dict) -> dict:
         "title": meeting.get("title", ""),
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),
+        "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
         "participant_count": len(participants),
         "max_capacity": meeting.get("max_capacity"),
         "status": meeting.get("status", "open"),
@@ -465,6 +467,7 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "description": meeting.get("description", ""),
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),
+        "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
         "participant_count": len(participants),
         "participants": [str(participant_id) for participant_id in participants],
         "max_capacity": meeting.get("max_capacity"),

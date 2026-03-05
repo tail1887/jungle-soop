@@ -29,6 +29,27 @@ def test_create_meeting_success(monkeypatch):
     assert result["body"]["data"]["meeting_id"] == "dummyid"
     assert captured["doc"]["author_id"] == "user1"
     assert captured["doc"]["participants"] == ["user1"]
+    assert captured["doc"]["deadline_at"] == "2026-04-01T12:00:00+09:00"
+
+
+def test_create_meeting_success_with_explicit_deadline(monkeypatch):
+    captured = {}
+
+    def fake_create(doc):
+        captured["doc"] = doc
+        return "dummyid"
+
+    monkeypatch.setattr("app.models.meeting_repository.MeetingRepository.create", fake_create)
+    payload = {
+        "title": "테스트",
+        "place": "장소",
+        "scheduled_at": "2026-04-01T12:00:00+09:00",
+        "deadline_at": "2026-03-31T12:00:00+09:00",
+        "max_capacity": 5,
+    }
+    result = MeetingService.create(payload)
+    assert result["status_code"] == 201
+    assert captured["doc"]["deadline_at"] == "2026-03-31T12:00:00+09:00"
 
 def test_update_meeting_success(monkeypatch):
     # MeetingRepository.find_by_id, update_by_id를 mock 처리

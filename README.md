@@ -522,6 +522,7 @@ sequenceDiagram
         "title": "저녁 같이 먹을 사람",
         "place": "기숙사 정문",
         "scheduled_at": "2026-03-05T18:30:00+09:00",
+        "deadline_at": "2026-03-05T17:30:00+09:00",
         "participant_count": 2,
         "max_capacity": 4,
         "status": "open"
@@ -551,7 +552,9 @@ sequenceDiagram
     "description": "분식집 가실 분 구해요.",
     "place": "기숙사 정문",
     "scheduled_at": "2026-03-05T18:30:00+09:00",
+    "deadline_at": "2026-03-05T17:30:00+09:00",
     "participant_count": 2,
+    "participants": ["65e5f2b7b321a8c120f11a01", "65e5f31ab321a8c120f11a15"],
     "max_capacity": 4,
     "status": "open",
     "author_id": "65e5f2b7b321a8c120f11a01"
@@ -570,6 +573,7 @@ sequenceDiagram
   "description": "분식집 가실 분 구해요.",
   "place": "기숙사 정문",
   "scheduled_at": "2026-03-05T18:30:00+09:00",
+  "deadline_at": "2026-03-05T17:30:00+09:00",
   "max_capacity": 4
 }
 ```
@@ -591,7 +595,8 @@ sequenceDiagram
 ```json
 {
   "title": "저녁 같이 먹을 사람 (시간 변경)",
-  "scheduled_at": "2026-03-05T19:00:00+09:00"
+  "scheduled_at": "2026-03-05T19:00:00+09:00",
+  "deadline_at": "2026-03-05T18:00:00+09:00"
 }
 ```
 
@@ -725,6 +730,7 @@ MongoDB 기준으로 `users`, `meetings` 2개 컬렉션을 운영합니다.
 | `description`  | String   | No       | 상세 설명             |
 | `place`        | String   | Yes      | 모임 장소             |
 | `scheduled_at` | Date     | Yes      | 모임 시작 시각          |
+| `deadline_at`  | Date     | No       | 모집 마감 시각(미입력 시 `scheduled_at`) |
 | `max_capacity` | Int      | Yes      | 최소 2 이상           |
 | `author_id`    | ObjectId | Yes      | 작성자 (`users._id`) |
 | `participants` | Array    | Yes      | 참여자 ID 목록         |
@@ -748,6 +754,7 @@ MongoDB 기준으로 `users`, `meetings` 2개 컬렉션을 운영합니다.
   "description": "기숙사 앞 분식집 가실 분 구해요.",
   "place": "기숙사 정문",
   "scheduled_at": { "$date": "2026-03-04T18:30:00Z" },
+  "deadline_at": { "$date": "2026-03-04T17:30:00Z" },
   "max_capacity": 4,
   "author_id": { "$oid": "65e5f2b7b321a8c120f11a01" },
   "participants": [
