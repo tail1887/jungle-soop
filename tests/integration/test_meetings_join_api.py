@@ -52,7 +52,7 @@ def test_join_meeting_success(client):
     body = response.get_json()
     assert body["success"] is True
     assert body["data"]["meeting_id"] == meeting_id
-    assert body["data"]["participant_count"] == 1
+    assert body["data"]["participant_count"] == 2
     assert body["data"]["status"] == "open"
 
 
@@ -80,7 +80,7 @@ def test_cancel_join_meeting_success(client):
     body = response.get_json()
     assert body["success"] is True
     assert body["data"]["meeting_id"] == meeting_id
-    assert body["data"]["participant_count"] == 0
+    assert body["data"]["participant_count"] == 1
 
 
 @pytest.mark.integration
@@ -93,7 +93,7 @@ def test_join_meeting_conflict_when_full(client):
             "description": "설명",
             "place": "기숙사",
             "scheduled_at": "2026-08-03T12:00:00+09:00",
-            "max_capacity": 1,
+            "max_capacity": 2,
         },
     )
 

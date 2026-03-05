@@ -18,11 +18,25 @@ class MeetingService:
                 },
             }
 
+        author_id = _current_user_id()
+        if not author_id:
+            return {
+                "status_code": 401,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "UNAUTHORIZED",
+                        "message": "로그인이 필요합니다.",
+                    },
+                },
+            }
+
         from datetime import datetime
         meeting_doc = payload.copy()
         meeting_doc.setdefault("description", "")
-        meeting_doc["author_id"] = _current_user_id()
-        meeting_doc["participants"] = []
+        meeting_doc["author_id"] = author_id
+        # The meeting author is considered an initial participant.
+        meeting_doc["participants"] = [author_id]
         meeting_doc["status"] = "open"
         now = datetime.utcnow()
         meeting_doc["created_at"] = now
