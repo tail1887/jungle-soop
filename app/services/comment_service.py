@@ -133,10 +133,17 @@ class CommentService:
                 parent = by_id.get(str(pid))
                 if parent:
                     parent.setdefault("replies", []).append(c)
-        for c in comments:
-            if c.get("replies"):
-                c["replies"] = [_serialize_comment(r) for r in sorted(c["replies"], key=lambda x: (x.get("created_at") or ""))]
-        items = [_serialize_comment(c, include_replies=True) for c in top_level]
+
+        def serialize_with_replies(comment):
+            out = _serialize_comment(comment)
+            if comment.get("replies"):
+                out["replies"] = [
+                    serialize_with_replies(r)
+                    for r in sorted(comment["replies"], key=lambda x: (x.get("created_at") or ""))
+                ]
+            return out
+
+        items = [serialize_with_replies(c) for c in top_level]
         items.sort(key=lambda x: x.get("created_at") or "")
         return {
             "status_code": 200,

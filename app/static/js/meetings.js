@@ -792,7 +792,6 @@ async function loadMeetingComments(meetingId) {
 function renderComments(container, items, meetingId, currentUserId) {
     container.innerHTML = "";
     if (!items.length) {
-        container.appendChild(document.createTextNode("댓글이 없습니다."));
         return;
     }
     items.forEach((item) => {
