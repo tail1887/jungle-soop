@@ -1,10 +1,21 @@
-from flask import Blueprint, jsonify, g, request
+from pathlib import Path
+from urllib.parse import quote
+
+from flask import Blueprint, current_app, jsonify, g, request
 from app.middleware.auth_guard import login_required
 from app.models.user_repository import UserRepository
 from app.models.meeting_repository import MeetingRepository
+from werkzeug.utils import secure_filename
 
 # 프로필 관련 API 블루프린트
 profile_bp = Blueprint("profile_api", __name__, url_prefix="/api/v1/profile")
+
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
+
+
+def _build_default_avatar_url(user_id: str, nickname: str | None) -> str:
+    seed = quote(nickname or user_id or "jungle-soop")
+    return f"https://api.dicebear.com/9.x/identicon/svg?seed={seed}"
 
 @profile_bp.route("/me", methods=["GET"])
 @login_required # 인증된 사용자만 접근 가능
@@ -23,7 +34,11 @@ def get_my_profile():
         "data": {
             "user_id": str(user["_id"]),
             "email": user.get("email"),
-            "nickname": user.get("nickname")
+            "nickname": user.get("nickname"),
+            "profile_image_url": user.get("profile_image_url") or _build_default_avatar_url(
+                str(user.get("_id", "")),
+                user.get("nickname"),
+            ),
         },
         "message": "내 정보 조회 성공"
     }), 200
@@ -55,6 +70,53 @@ def update_my_profile():
         "success": True,
         "data": {"nickname": new_nickname},
         "message": "프로필 수정 성공!"
+    }), 200
+
+
+@profile_bp.route("/me/avatar", methods=["POST"])
+@login_required
+def upload_my_avatar():
+    user_id = g.user_id
+    user = UserRepository.find_by_id(user_id)
+    if not user:
+        return jsonify({
+            "success": False,
+            "error": {"code": "USER_NOT_FOUND", "message": "사용자를 찾을 수 없습니다."}
+        }), 404
+
+    image_file = request.files.get("avatar")
+    if image_file is None or not image_file.filename:
+        return jsonify({
+            "success": False,
+            "error": {"code": "INVALID_INPUT", "message": "업로드할 이미지 파일이 필요합니다."}
+        }), 400
+
+    filename = secure_filename(image_file.filename)
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({
+            "success": False,
+            "error": {"code": "INVALID_INPUT", "message": "지원하지 않는 이미지 형식입니다."}
+        }), 400
+
+    upload_root = Path(current_app.static_folder) / "uploads" / "avatars"
+    upload_root.mkdir(parents=True, exist_ok=True)
+    stored_filename = f"{user_id}.{extension}"
+    save_path = upload_root / stored_filename
+    image_file.save(save_path)
+
+    profile_image_url = f"/static/uploads/avatars/{stored_filename}"
+    updated = UserRepository.update_user(user_id, {"profile_image_url": profile_image_url})
+    if not updated:
+        return jsonify({
+            "success": False,
+            "error": {"code": "USER_NOT_FOUND", "message": "사용자를 찾을 수 없습니다."}
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "data": {"profile_image_url": profile_image_url},
+        "message": "프로필 이미지가 업데이트되었습니다."
     }), 200
 
 @profile_bp.route("/meetings/created", methods=["GET"])  

@@ -117,6 +117,25 @@ function getDatetimeLocalMin() {
     return `${y}-${m}-${day}T${h}:${min}`;
 }
 
+/** duration_minutes → "1시간 30분" 형태 */
+function formatDurationMinutes(mins) {
+    if (mins == null || mins <= 0) return "";
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h && m) return `${h}시간 ${m}분`;
+    if (h) return `${h}시간`;
+    return `${m}분`;
+}
+
+/** 일시(datetime-local 또는 ISO 문자열) + 소요 분 → 종료 시각 표시 문자열 */
+function computeEndTimeDisplay(scheduledAtStr, durationMinutes) {
+    if (!scheduledAtStr || !durationMinutes) return null;
+    const start = new Date(scheduledAtStr);
+    if (Number.isNaN(start.getTime())) return null;
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")} ${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -145,12 +164,13 @@ function createMeetingListItem(meeting) {
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
     const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
+    const durationText = formatDurationMinutes(meeting.duration_minutes ?? 60);
 
     li.innerHTML = `
         <a href="/meetings/${id}">
             <strong>${title}</strong>
         </a>
-        <p>${place} · ${scheduledAt} · ${categoryLabel}</p>
+        <p>${place} · ${scheduledAt} · ${categoryLabel}${durationText ? ` · 소요 ${durationText}` : ""}</p>
         <p>마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}</p>
     `;
     return li;
@@ -299,6 +319,9 @@ function parseCreateFormPayload(form) {
     const scheduledAt = readFormField(form, ["scheduled_at", "datetime"]).trim();
     const deadlineAtInput = readFormField(form, ["deadline_at", "deadline"]).trim();
     const category = readFormField(form, ["category"]).trim() || "other";
+    const durationHours = parseInt(readFormField(form, ["duration_hours"]), 10) || 0;
+    const durationMinutesPart = parseInt(readFormField(form, ["duration_minutes"]), 10) || 0;
+    const durationMinutesTotal = durationHours * 60 + durationMinutesPart || 60;
     return {
         title: readFormField(form, ["title"]).trim(),
         category,
@@ -307,6 +330,7 @@ function parseCreateFormPayload(form) {
         place: readFormField(form, ["place", "location"]).trim(),
         description: readFormField(form, ["description"]).trim(),
         max_capacity: Number(rawMaxCapacity),
+        duration_minutes: durationMinutesTotal,
     };
 }
 
@@ -316,6 +340,9 @@ function validateCreateForm(payload) {
     }
     if (payload.max_capacity < 2 || payload.max_capacity > 20) {
         return "모집 인원은 2~20명 사이여야 합니다.";
+    }
+    if (payload.duration_minutes < 1 || payload.duration_minutes > 24 * 60) {
+        return "소요 시간은 1분 이상 24시간 이하여야 합니다.";
     }
     const now = Date.now();
     const scheduledAtTs = Date.parse(payload.scheduled_at);
@@ -358,6 +385,24 @@ function bindMeetingCreatePage() {
             }
         });
     }
+
+    const durationHoursInput = form.elements.namedItem("duration_hours");
+    const durationMinutesInput = form.elements.namedItem("duration_minutes");
+    const endTimeEl = document.getElementById("meeting-create-end-time");
+    function updateCreateFormEndTime() {
+        if (!endTimeEl) return;
+        const scheduledVal = scheduledInput?.value?.trim();
+        const h = parseInt(durationHoursInput?.value, 10) || 0;
+        const m = parseInt(durationMinutesInput?.value, 10) || 0;
+        const totalMins = h * 60 + m;
+        const text = computeEndTimeDisplay(scheduledVal, totalMins);
+        endTimeEl.textContent = text ? `종료 예정: ${text}` : "종료 예정: 일시와 소요시간을 입력하면 표시됩니다.";
+    }
+    if (scheduledInput) scheduledInput.addEventListener("input", updateCreateFormEndTime);
+    if (scheduledInput) scheduledInput.addEventListener("change", updateCreateFormEndTime);
+    if (durationHoursInput) durationHoursInput.addEventListener("input", updateCreateFormEndTime);
+    if (durationMinutesInput) durationMinutesInput.addEventListener("input", updateCreateFormEndTime);
+    updateCreateFormEndTime();
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -427,7 +472,11 @@ function setMeetingDetail(meeting) {
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
     const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
-    metaEl.textContent = `${place} · ${categoryLabel} · 일정 ${scheduledAt} · 마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
+    const durationMins = meeting.duration_minutes ?? 60;
+    const durationText = formatDurationMinutes(durationMins);
+    const endTimeStr = computeEndTimeDisplay(meeting.scheduled_at || "", durationMins);
+    const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
+    metaEl.textContent = [place, categoryLabel, `일정 ${scheduledAt}`, durationAndEnd, `마감 ${deadlineAt}`, `참여 ${count}/${maxCapacity}`, `상태 ${status}`].filter(Boolean).join(" · ");
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
@@ -693,11 +742,21 @@ async function loadMeetingDetail(options) {
         const meeting = result.data?.data || {};
         currentMeetingDetail = meeting;
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
-        root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · 일정 ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")} · 마감 ${pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
+        const durationMins = meeting.duration_minutes ?? 60;
+        const durationText = formatDurationMinutes(durationMins);
+        const endTimeStr = computeEndTimeDisplay(meeting.scheduled_at || "", durationMins);
+        const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
+        root.dataset.metaPrefix = [
+            pickFirst(meeting.place, meeting.location, "장소 미정"),
+            "일정 " + pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정"),
+            durationAndEnd,
+            "마감 " + pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정"),
+        ].filter(Boolean).join(" · ");
         setMeetingDetail(meeting);
         renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
         updateCloseButtonState(meeting);
+        loadMeetingComments(meetingId);
         if (!options?.skipSuccessMessage) {
             setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
         }
@@ -719,8 +778,170 @@ function bindMeetingDetailPage() {
     if (meetingId && messageElement) {
         bindOwnerActions(meetingId, messageElement);
         bindMeetingJoinActions(meetingId, messageElement);
+        bindMeetingCommentForm(meetingId);
     }
     loadMeetingDetail();
+}
+
+async function loadMeetingComments(meetingId) {
+    const listEl = document.getElementById("meeting-comments-list");
+    const messageEl = document.getElementById("meeting-comments-message");
+    if (!listEl || !meetingId) return;
+    listEl.innerHTML = "";
+    try {
+        const result = await fetchJson(`/api/v1/meetings/${meetingId}/comments`);
+        if (!result.ok) {
+            if (messageEl) messageEl.textContent = "댓글을 불러오지 못했습니다.";
+            return;
+        }
+        const items = result.data?.data?.items || [];
+        const currentUserId = getCurrentUserId();
+        renderComments(listEl, items, meetingId, currentUserId);
+        if (messageEl) messageEl.textContent = items.length ? "" : "아직 댓글이 없습니다.";
+    } catch (_e) {
+        if (messageEl) messageEl.textContent = "댓글을 불러오지 못했습니다.";
+    }
+}
+
+function flattenReplies(replies) {
+    if (!replies || !replies.length) return [];
+    const out = [];
+    function visit(list) {
+        list.forEach((r) => {
+            out.push(r);
+            if (r.replies && r.replies.length) visit(r.replies);
+        });
+    }
+    visit(replies);
+    return out;
+}
+
+function getCommentRoleLabel(role) {
+    if (role === "creator") return "생성자";
+    if (role === "participant") return "참여자";
+    return "미참여자";
+}
+
+function renderComments(container, items, meetingId, currentUserId, options) {
+    const flatReplies = options && options.flatReplies;
+    container.innerHTML = "";
+    if (!items.length) {
+        container.appendChild(document.createTextNode("댓글이 없습니다."));
+        return;
+    }
+    items.forEach((item) => {
+        const wrap = document.createElement("div");
+        wrap.className = "comment-item";
+        const author = item.author_nickname || item.author_id || "알 수 없음";
+        const avatarUrl = item.author_profile_image_url || "";
+        const role = item.author_meeting_role || "non_participant";
+        const roleLabel = getCommentRoleLabel(role);
+        const timeStr = item.created_at ? new Date(item.created_at).toLocaleString("ko-KR") : "";
+        let html = `<div class="comment-body"><div class="comment-header"><img class="comment-avatar-image" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(author)} 프로필 이미지"><div class="comment-header-meta"><div><strong>${escapeHtml(author)}</strong> <span class="comment-role-badge comment-role-${escapeHtml(role)}">${escapeHtml(roleLabel)}</span></div><span class="comment-time">${escapeHtml(timeStr)}</span></div></div><p class="comment-text">${escapeHtml(item.body)}</p>`;
+        if (currentUserId && String(item.author_id) === currentUserId) {
+            html += `<button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(item.comment_id)}">삭제</button>`;
+        }
+        if (currentUserId) {
+            html += `<button type="button" class="comment-reply-btn" data-comment-id="${escapeHtml(item.comment_id)}">답글</button>`;
+        }
+        html += "</div>";
+        wrap.innerHTML = html;
+        const deleteBtn = wrap.querySelector(".comment-delete-btn");
+        if (deleteBtn) {
+            deleteBtn.addEventListener("click", async () => {
+                if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
+                const res = await fetchJson(`/api/v1/meetings/${meetingId}/comments/${item.comment_id}`, { method: "DELETE" });
+                if (res.ok || res.status === 204) loadMeetingComments(meetingId);
+            });
+        }
+        const replyBtn = wrap.querySelector(".comment-reply-btn");
+        if (replyBtn) {
+            replyBtn.addEventListener("click", () => {
+                const existing = wrap.querySelector(".comment-reply-form-wrap");
+                if (existing) {
+                    existing.remove();
+                    return;
+                }
+                const formWrap = document.createElement("div");
+                formWrap.className = "comment-reply-form-wrap";
+                formWrap.innerHTML = `<form class="comment-reply-form"><textarea rows="2" placeholder="답글을 입력하세요."></textarea><button type="submit">등록</button> <button type="button" class="comment-reply-cancel">취소</button></form>`;
+                const form = formWrap.querySelector("form");
+                const textarea = formWrap.querySelector("textarea");
+                const cancelBtn = formWrap.querySelector(".comment-reply-cancel");
+                cancelBtn.addEventListener("click", () => formWrap.remove());
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const body = (textarea.value || "").trim();
+                    if (!body) return;
+                    try {
+                        const result = await fetchJson(`/api/v1/meetings/${meetingId}/comments`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ body, parent_id: item.comment_id }),
+                        });
+                        if (result.ok || result.status === 201) {
+                            formWrap.remove();
+                            loadMeetingComments(meetingId);
+                        }
+                    } catch (_err) {}
+                });
+                const repliesEl = wrap.querySelector(".comment-replies");
+                if (repliesEl) wrap.insertBefore(formWrap, repliesEl);
+                else wrap.appendChild(formWrap);
+            });
+        }
+        if (!flatReplies && item.replies && item.replies.length > 0) {
+            const repliesEl = document.createElement("div");
+            repliesEl.className = "comment-replies";
+            const flatList = flattenReplies(item.replies);
+            renderComments(repliesEl, flatList, meetingId, currentUserId, { flatReplies: true });
+            wrap.appendChild(repliesEl);
+        }
+        container.appendChild(wrap);
+    });
+}
+
+function escapeHtml(str) {
+    if (str == null) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function bindMeetingCommentForm(meetingId) {
+    const form = document.getElementById("meeting-comment-form");
+    const bodyInput = document.getElementById("meeting-comment-body");
+    const messageEl = document.getElementById("meeting-comments-message");
+    if (!form || !bodyInput || !meetingId) return;
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const body = (bodyInput.value || "").trim();
+        if (!body) {
+            if (messageEl) messageEl.textContent = "댓글 내용을 입력해주세요.";
+            return;
+        }
+        if (messageEl) messageEl.textContent = "등록 중...";
+        try {
+            const result = await fetchJson(`/api/v1/meetings/${meetingId}/comments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ body }),
+            });
+            if (!result.ok) {
+                if (result.status === 401) {
+                    if (messageEl) messageEl.textContent = "로그인이 필요합니다.";
+                    return;
+                }
+                if (messageEl) messageEl.textContent = result.data?.error?.message || "댓글 등록에 실패했습니다.";
+                return;
+            }
+            bodyInput.value = "";
+            if (messageEl) messageEl.textContent = "";
+            loadMeetingComments(meetingId);
+        } catch (_err) {
+            if (messageEl) messageEl.textContent = "댓글 등록에 실패했습니다.";
+        }
+    });
 }
 
 function bindMeetingEditPage() {
@@ -733,6 +954,20 @@ function bindMeetingEditPage() {
         return;
     }
 
+    const scheduledInput = form.elements.namedItem("scheduled_at");
+    const durationHoursInput = form.elements.namedItem("duration_hours");
+    const durationMinutesInput = form.elements.namedItem("duration_minutes");
+    const endTimeEl = document.getElementById("meeting-edit-end-time");
+    function updateEditFormEndTime() {
+        if (!endTimeEl) return;
+        const scheduledVal = scheduledInput?.value?.trim();
+        const h = parseInt(durationHoursInput?.value, 10) || 0;
+        const m = parseInt(durationMinutesInput?.value, 10) || 0;
+        const totalMins = h * 60 + m;
+        const text = computeEndTimeDisplay(scheduledVal, totalMins);
+        endTimeEl.textContent = text ? `종료 예정: ${text}` : "종료 예정: 일시와 소요시간을 입력하면 표시됩니다.";
+    }
+
     const fillForm = (meeting) => {
         const titleField = form.elements.namedItem("title");
         const categoryField = form.elements.namedItem("category");
@@ -741,6 +976,8 @@ function bindMeetingEditPage() {
         const placeField = form.elements.namedItem("place");
         const descriptionField = form.elements.namedItem("description");
         const maxCapacityField = form.elements.namedItem("max_capacity");
+        const durationHoursField = form.elements.namedItem("duration_hours");
+        const durationMinutesField = form.elements.namedItem("duration_minutes");
         if (titleField && "value" in titleField) titleField.value = meeting.title || "";
         if (categoryField && "value" in categoryField) {
             const cat = meeting.category || "other";
@@ -751,15 +988,18 @@ function bindMeetingEditPage() {
         if (placeField && "value" in placeField) placeField.value = meeting.place || "";
         if (descriptionField && "value" in descriptionField) descriptionField.value = meeting.description || "";
         if (maxCapacityField && "value" in maxCapacityField) maxCapacityField.value = String(meeting.max_capacity || 4);
+        const durationMins = meeting.duration_minutes ?? 60;
+        if (durationHoursField && "value" in durationHoursField) durationHoursField.value = String(Math.floor(durationMins / 60));
+        if (durationMinutesField && "value" in durationMinutesField) durationMinutesField.value = String(durationMins % 60);
         const minVal = getDatetimeLocalMin();
         if (scheduledAtField) scheduledAtField.min = minVal;
         if (deadlineAtField) {
             deadlineAtField.min = minVal;
             if (scheduledAtField && scheduledAtField.value) deadlineAtField.max = scheduledAtField.value;
         }
+        if (typeof updateEditFormEndTime === "function") updateEditFormEndTime();
     };
 
-    const scheduledInput = form.elements.namedItem("scheduled_at");
     const deadlineInput = form.elements.namedItem("deadline_at");
     if (scheduledInput && deadlineInput) {
         scheduledInput.addEventListener("change", function () {
@@ -770,6 +1010,10 @@ function bindMeetingEditPage() {
             }
         });
     }
+    if (scheduledInput) scheduledInput.addEventListener("input", updateEditFormEndTime);
+    if (scheduledInput) scheduledInput.addEventListener("change", updateEditFormEndTime);
+    if (durationHoursInput) durationHoursInput.addEventListener("input", updateEditFormEndTime);
+    if (durationMinutesInput) durationMinutesInput.addEventListener("input", updateEditFormEndTime);
 
     const loadForEdit = async () => {
         setUiMessage(messageElement, "수정할 모임 정보를 불러오는 중...", "");

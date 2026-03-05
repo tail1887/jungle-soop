@@ -49,6 +49,22 @@ form {
     gap: 10px;
 }
 
+.duration-input-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.duration-input-row input {
+    width: 4rem;
+}
+
+.duration-unit {
+    margin-right: 8px;
+    color: #4b5563;
+}
+
 input,
 select,
 textarea,
@@ -181,4 +197,177 @@ button {
     padding: 12px;
     margin-bottom: 12px;
     background: #f9fafb;
+}
+
+.meeting-comments {
+    margin-top: 16px;
+}
+
+.meeting-comments .comments-list {
+    margin-bottom: 12px;
+}
+
+.comment-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-body {
+    position: relative;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.comment-header-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.comment-avatar-image {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    object-fit: cover;
+    background: #f3f4f6;
+}
+
+.comment-role-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.comment-role-creator {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.comment-role-participant {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.comment-role-non_participant {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.comment-time {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-left: 0;
+}
+
+.comment-text {
+    margin: 6px 0 0;
+    white-space: pre-wrap;
+}
+
+.comment-delete-btn {
+    margin-top: 4px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+
+.comment-reply-btn {
+    margin-left: 8px;
+    margin-top: 4px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    background: #e5e7eb;
+    color: #374151;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.comment-reply-form-wrap {
+    margin-top: 8px;
+}
+
+.comment-reply-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.comment-reply-form textarea {
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font: inherit;
+}
+
+.comment-reply-form button[type="submit"] {
+    align-self: flex-start;
+    padding: 6px 12px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.comment-reply-cancel {
+    margin-left: 8px;
+    padding: 6px 12px;
+    background: #e5e7eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.comment-replies {
+    margin-left: 20px;
+    margin-top: 8px;
+    padding-left: 12px;
+    border-left: 2px solid #e5e7eb;
+}
+
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.profile-avatar-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.profile-avatar-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    object-fit: cover;
+    background: #f3f4f6;
+}
+
+.profile-avatar-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }

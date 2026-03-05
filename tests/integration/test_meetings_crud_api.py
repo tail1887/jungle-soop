@@ -63,6 +63,27 @@ def test_create_meeting_with_category(client):
 
 
 @pytest.mark.integration
+def test_create_meeting_with_duration(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+
+    payload = {
+        "title": "1시간 반 모임",
+        "place": "장소",
+        "scheduled_at": "2026-12-10T14:00:00+09:00",
+        "max_capacity": 4,
+        "duration_minutes": 90,
+    }
+    response = client.post("/api/v1/meetings", json=payload, headers=_auth_headers())
+    assert response.status_code == 201
+    meeting_id = response.get_json()["data"]["meeting_id"]
+
+    detail = client.get(f"/api/v1/meetings/{meeting_id}").get_json()
+    assert detail["success"] is True
+    assert detail["data"]["duration_minutes"] == 90
+
+
+@pytest.mark.integration
 def test_create_meeting_invalid_category(client):
     with client.session_transaction() as sess:
         sess["user_id"] = "user1"

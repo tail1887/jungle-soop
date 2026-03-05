@@ -4,6 +4,14 @@
 <section class="card" id="profile-root">
     <h2>내 프로필</h2>
     <p id="profile-message" class="form-message" role="alert" aria-live="polite"></p>
+    <div class="profile-avatar-block">
+        <img id="profile-avatar-image" class="profile-avatar-image" src="" alt="프로필 이미지">
+        <form id="profile-avatar-form" class="profile-avatar-form" novalidate>
+            <label for="profile-avatar-input">프로필 이미지</label>
+            <input id="profile-avatar-input" name="avatar" type="file" accept="image/*">
+            <button id="profile-avatar-save-button" type="submit">이미지 업로드</button>
+        </form>
+    </div>
     <p class="helper-text">이메일: <strong id="profile-email">-</strong></p>
     <form id="profile-edit-form" novalidate>
         <label for="profile-nickname">닉네임</label>
