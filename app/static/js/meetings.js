@@ -802,6 +802,12 @@ function flattenReplies(replies) {
     return out;
 }
 
+function getCommentRoleLabel(role) {
+    if (role === "creator") return "생성자";
+    if (role === "participant") return "참여자";
+    return "미참여자";
+}
+
 function renderComments(container, items, meetingId, currentUserId, options) {
     const flatReplies = options && options.flatReplies;
     container.innerHTML = "";
@@ -813,8 +819,11 @@ function renderComments(container, items, meetingId, currentUserId, options) {
         const wrap = document.createElement("div");
         wrap.className = "comment-item";
         const author = item.author_nickname || item.author_id || "알 수 없음";
+        const avatarUrl = item.author_profile_image_url || "";
+        const role = item.author_meeting_role || "non_participant";
+        const roleLabel = getCommentRoleLabel(role);
         const timeStr = item.created_at ? new Date(item.created_at).toLocaleString("ko-KR") : "";
-        let html = `<div class="comment-body"><strong>${escapeHtml(author)}</strong> <span class="comment-time">${escapeHtml(timeStr)}</span><p class="comment-text">${escapeHtml(item.body)}</p>`;
+        let html = `<div class="comment-body"><div class="comment-header"><img class="comment-avatar-image" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(author)} 프로필 이미지"><div class="comment-header-meta"><div><strong>${escapeHtml(author)}</strong> <span class="comment-role-badge comment-role-${escapeHtml(role)}">${escapeHtml(roleLabel)}</span></div><span class="comment-time">${escapeHtml(timeStr)}</span></div></div><p class="comment-text">${escapeHtml(item.body)}</p>`;
         if (currentUserId && String(item.author_id) === currentUserId) {
             html += `<button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(item.comment_id)}">삭제</button>`;
         }
