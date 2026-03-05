@@ -1141,21 +1141,19 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [ ] feat: `GET /api/v1/profile/me` 구현 (내 정보 조회)
 - [ ] feat: `PATCH /api/v1/profile/me` 구현 (내 정보 수정)
 - [ ] test: 프로필 조회/수정 API 테스트
+- [ ] test: 프로필 수정 후 재조회 일관성 테스트
 
 #### 🌿 Branch: `feature/profile-meetings-query` (프로필 모임 조회 API)
 - [ ] feat: 내가 만든 모임 목록 조회 API
 - [ ] feat: 내가 현재 참여 중인 모임 목록 조회 API
 - [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
 - [ ] test: 모임 유형(created/joined_active/joined_past)별 조회 테스트
+- [ ] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
 
 #### 🎨 Branch: `feature/profile-ui` (프로필 화면 연동)
 - [ ] feat: 프로필 페이지 UI(내 정보 카드 + 수정 폼) 구현
 - [ ] feat: 모임 탭 UI(만든 모임/참여 중/참여했던 모임) 구현
 - [ ] test: 프로필 화면 주요 시나리오 수동 테스트
-
-#### ⚙️ Branch: `feature/profile-integration-tests` (프로필 통합 테스트 보강)
-- [ ] test: 프로필 수정 후 재조회 일관성 테스트
-- [ ] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
 
 #### ⚙️ Branch: `feature/deploy-ec2` (배포)
 - [ ] feat: 단일 EC2 서버 배포 스크립트/절차 작성
