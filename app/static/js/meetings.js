@@ -142,12 +142,13 @@ function createMeetingListItem(meeting) {
     const count = meeting.participant_count ?? 0;
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
+    const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
 
     li.innerHTML = `
         <a href="/meetings/${id}">
             <strong>${title}</strong>
         </a>
-        <p>${place} · ${scheduledAt}</p>
+        <p>${place} · ${scheduledAt} · ${categoryLabel}</p>
         <p>마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}</p>
     `;
     return li;
@@ -277,8 +278,10 @@ function parseCreateFormPayload(form) {
     const rawMaxCapacity = readFormField(form, ["max_capacity", "capacity"]);
     const scheduledAt = readFormField(form, ["scheduled_at", "datetime"]).trim();
     const deadlineAtInput = readFormField(form, ["deadline_at", "deadline"]).trim();
+    const category = readFormField(form, ["category"]).trim() || "other";
     return {
         title: readFormField(form, ["title"]).trim(),
+        category,
         scheduled_at: scheduledAt,
         deadline_at: deadlineAtInput || scheduledAt,
         place: readFormField(form, ["place", "location"]).trim(),
@@ -403,7 +406,8 @@ function setMeetingDetail(meeting) {
     const count = meeting.participant_count ?? 0;
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
-    metaEl.textContent = `${place} · 일정 ${scheduledAt} · 마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
+    const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
+    metaEl.textContent = `${place} · ${categoryLabel} · 일정 ${scheduledAt} · 마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
@@ -690,12 +694,17 @@ function bindMeetingEditPage() {
 
     const fillForm = (meeting) => {
         const titleField = form.elements.namedItem("title");
+        const categoryField = form.elements.namedItem("category");
         const scheduledAtField = form.elements.namedItem("scheduled_at");
         const deadlineAtField = form.elements.namedItem("deadline_at");
         const placeField = form.elements.namedItem("place");
         const descriptionField = form.elements.namedItem("description");
         const maxCapacityField = form.elements.namedItem("max_capacity");
         if (titleField && "value" in titleField) titleField.value = meeting.title || "";
+        if (categoryField && "value" in categoryField) {
+            const cat = meeting.category || "other";
+            categoryField.value = ["meal", "exercise", "study", "other"].includes(cat) ? cat : "other";
+        }
         if (scheduledAtField && "value" in scheduledAtField) scheduledAtField.value = toDatetimeLocalValue(meeting.scheduled_at || "");
         if (deadlineAtField && "value" in deadlineAtField) deadlineAtField.value = toDatetimeLocalValue(meeting.deadline_at || meeting.scheduled_at || "");
         if (placeField && "value" in placeField) placeField.value = meeting.place || "";
