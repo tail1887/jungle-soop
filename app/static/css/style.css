@@ -304,3 +304,25 @@ button {
     gap: 8px;
     margin-top: 12px;
 }
+
+.profile-avatar-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.profile-avatar-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    object-fit: cover;
+    background: #f3f4f6;
+}
+
+.profile-avatar-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
