@@ -529,7 +529,8 @@ sequenceDiagram
         "deadline_at": "2026-03-05T17:30:00+09:00",
         "participant_count": 2,
         "max_capacity": 4,
-        "status": "open"
+        "status": "open",
+        "duration_minutes": 60
       }
     ],
     "pagination": {
@@ -562,7 +563,8 @@ sequenceDiagram
     "participants": ["65e5f2b7b321a8c120f11a01", "65e5f31ab321a8c120f11a15"],
     "max_capacity": 4,
     "status": "open",
-    "author_id": "65e5f2b7b321a8c120f11a01"
+    "author_id": "65e5f2b7b321a8c120f11a01",
+    "duration_minutes": 60
   },
   "message": "모임 상세 조회 성공"
 }
@@ -580,11 +582,13 @@ sequenceDiagram
   "scheduled_at": "2026-03-05T18:30:00+09:00",
   "deadline_at": "2026-03-05T17:30:00+09:00",
   "max_capacity": 4,
-  "category": "meal"
+  "category": "meal",
+  "duration_minutes": 90
 }
 ```
 
 - `category`: 선택. `meal`(식사) | `exercise`(운동) | `study`(스터디) | `other`(기타). 미제출 시 `other`.
+- `duration_minutes`: 선택. 소요 시간(분). 1~1440(24시간). 미제출 시 60.
 
 - Success (`201`)
 
