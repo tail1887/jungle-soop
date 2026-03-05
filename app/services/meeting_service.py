@@ -246,8 +246,8 @@ class MeetingService: # TODO(feature/meetings-crud): 서비스 레이어 구현,
         # 상세 조회: 모임 정보 반환
         from app.models.meeting_repository import MeetingRepository
         
-        meeting = MeetingRepository.find_by_id(meeting_id)
-        if not meeting:
+        meeting = MeetingRepository.find_by_id(meeting_id) # 존재 여부 확인
+        if not meeting: # 존재하지 않는 모임 조회 시 404 반환
             return {
                 "status_code": 404,
                 "body": {
