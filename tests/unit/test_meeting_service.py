@@ -12,8 +12,12 @@ def patch_flask_session(monkeypatch):
     monkeypatch.setattr("flask.session", DummySession({"user_id": "user1"}))
 
 def test_create_meeting_success(monkeypatch):
-    # MeetingRepository.create를 mock 처리
-    monkeypatch.setattr("app.models.meeting_repository.MeetingRepository.create", lambda doc: "dummyid")
+    captured = {}
+    def fake_create(doc):
+        captured["doc"] = doc
+        return "dummyid"
+
+    monkeypatch.setattr("app.models.meeting_repository.MeetingRepository.create", fake_create)
     payload = {
         "title": "테스트",
         "place": "장소",
@@ -23,6 +27,8 @@ def test_create_meeting_success(monkeypatch):
     result = MeetingService.create(payload)
     assert result["status_code"] == 201
     assert result["body"]["data"]["meeting_id"] == "dummyid"
+    assert captured["doc"]["author_id"] == "user1"
+    assert captured["doc"]["participants"] == ["user1"]
 
 def test_update_meeting_success(monkeypatch):
     # MeetingRepository.find_by_id, update_by_id를 mock 처리

@@ -78,7 +78,7 @@ def test_get_meeting_detail_success(client):
     assert body["success"] is True
     assert body["data"]["meeting_id"] == meeting_id
     assert body["data"]["title"] == "상세 테스트 모임"
-    assert body["data"]["participant_count"] == 0
+    assert body["data"]["participant_count"] == 1
 
 
 @pytest.mark.integration
