@@ -269,7 +269,9 @@ function updateListToolbarButtons() {
     }
     if (sortBtn) {
         sortBtn.classList.add("is-active");
-        sortBtn.textContent = `최신순 ${listSortState.order === "desc" ? "▼" : "▲"}`;
+        const isLatest = listSortState.order === "desc";
+        sortBtn.textContent = isLatest ? "최신순 ▼" : "오래된순 ▲";
+        sortBtn.setAttribute("aria-label", isLatest ? "최신순 정렬 (클릭 시 오래된순)" : "오래된순 정렬 (클릭 시 최신순)");
     }
 }
 
