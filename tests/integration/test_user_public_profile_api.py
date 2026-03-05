@@ -51,6 +51,7 @@ def test_get_public_user_profile_api_returns_email_and_nickname(app, client):
         assert data["data"]["user_id"] == user_id
         assert data["data"]["email"] == user_doc["email"]
         assert data["data"]["nickname"] == user_doc["nickname"]
+        assert data["data"]["profile_image_url"].startswith("https://api.dicebear.com/")
         # password 같은 민감 정보는 포함되지 않아야 함
         assert "password" not in data["data"]
     finally:
@@ -110,4 +111,29 @@ def test_user_profile_page_route_renders(client):
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)
     assert 'id="user-profile-root"' in text
+    assert 'id="user-profile-avatar-image"' in text
     assert "test-user-id" in text
+
+
+@pytest.mark.integration
+def test_get_public_user_profile_api_returns_custom_profile_image(app, client):
+    headers = _signup_and_login(client)
+
+    db = get_database(app)
+    users = db.users
+    user_doc = {
+        "_id": ObjectId(),
+        "email": "custom-avatar@example.com",
+        "nickname": "avatar-user",
+        "password_hash": "dummy",
+        "profile_image_url": "/static/uploads/avatars/custom-avatar.png",
+    }
+    users.insert_one(user_doc)
+    try:
+        user_id = str(user_doc["_id"])
+        resp = client.get(f"/api/v1/users/{user_id}", headers=headers)
+        assert resp.status_code == 200
+        data = resp.get_json()["data"]
+        assert data["profile_image_url"] == "/static/uploads/avatars/custom-avatar.png"
+    finally:
+        users.delete_one({"_id": user_doc["_id"]})
