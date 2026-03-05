@@ -22,7 +22,7 @@ def _current_user_id() -> str | None:
     return None
 
 
-def _serialize_comment(comment: dict) -> dict:
+def _serialize_comment(comment: dict, include_replies: bool = False) -> dict:
     from app.models.user_repository import UserRepository
 
     author_id = str(comment.get("author_id", ""))
@@ -31,7 +31,7 @@ def _serialize_comment(comment: dict) -> dict:
     created_at = comment.get("created_at")
     if hasattr(created_at, "isoformat"):
         created_at = created_at.isoformat() + "Z"
-    return {
+    out = {
         "comment_id": str(comment.get("_id", "")),
         "meeting_id": comment.get("meeting_id", ""),
         "author_id": author_id,
@@ -39,6 +39,11 @@ def _serialize_comment(comment: dict) -> dict:
         "body": comment.get("body", ""),
         "created_at": created_at or "",
     }
+    if comment.get("parent_id") is not None:
+        out["parent_id"] = str(comment["parent_id"])
+    if include_replies and "replies" in comment:
+        out["replies"] = comment["replies"]
+    return out
 
 
 class CommentService:
@@ -81,6 +86,18 @@ class CommentService:
             "body": body,
             "created_at": now,
         }
+        parent_id = (payload.get("parent_id") or "").strip()
+        if parent_id:
+            parent = CommentRepository.find_by_id(parent_id)
+            if not parent or str(parent.get("meeting_id")) != meeting_id:
+                return {
+                    "status_code": 400,
+                    "body": {
+                        "success": False,
+                        "error": {"code": "COMMENT_INVALID_PAYLOAD", "message": "존재하지 않는 댓글에는 답글을 달 수 없습니다."},
+                    },
+                }
+            comment_doc["parent_id"] = parent_id
         comment_id = CommentRepository.create(comment_doc)
         comment = CommentRepository.find_by_id(comment_id)
         return {
@@ -105,7 +122,22 @@ class CommentService:
             }
 
         comments = CommentRepository.find_by_meeting_id(meeting_id)
-        items = [_serialize_comment(c) for c in comments]
+        # Build nested structure: top-level have no parent_id, replies under parent
+        by_id = {str(c["_id"]): c for c in comments}
+        top_level = []
+        for c in comments:
+            pid = c.get("parent_id")
+            if pid is None or pid == "":
+                top_level.append(c)
+            else:
+                parent = by_id.get(str(pid))
+                if parent:
+                    parent.setdefault("replies", []).append(c)
+        for c in comments:
+            if c.get("replies"):
+                c["replies"] = [_serialize_comment(r) for r in sorted(c["replies"], key=lambda x: (x.get("created_at") or ""))]
+        items = [_serialize_comment(c, include_replies=True) for c in top_level]
+        items.sort(key=lambda x: x.get("created_at") or "")
         return {
             "status_code": 200,
             "body": {
