@@ -789,7 +789,21 @@ async function loadMeetingComments(meetingId) {
     }
 }
 
-function renderComments(container, items, meetingId, currentUserId) {
+function flattenReplies(replies) {
+    if (!replies || !replies.length) return [];
+    const out = [];
+    function visit(list) {
+        list.forEach((r) => {
+            out.push(r);
+            if (r.replies && r.replies.length) visit(r.replies);
+        });
+    }
+    visit(replies);
+    return out;
+}
+
+function renderComments(container, items, meetingId, currentUserId, options) {
+    const flatReplies = options && options.flatReplies;
     container.innerHTML = "";
     if (!items.length) {
         return;
@@ -803,7 +817,9 @@ function renderComments(container, items, meetingId, currentUserId) {
         if (currentUserId && String(item.author_id) === currentUserId) {
             html += `<button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(item.comment_id)}">삭제</button>`;
         }
-        html += `<button type="button" class="comment-reply-btn" data-comment-id="${escapeHtml(item.comment_id)}">답글</button>`;
+        if (!flatReplies) {
+            html += `<button type="button" class="comment-reply-btn" data-comment-id="${escapeHtml(item.comment_id)}">답글</button>`;
+        }
         html += "</div>";
         wrap.innerHTML = html;
         const deleteBtn = wrap.querySelector(".comment-delete-btn");
@@ -853,7 +869,8 @@ function renderComments(container, items, meetingId, currentUserId) {
         if (item.replies && item.replies.length > 0) {
             const repliesEl = document.createElement("div");
             repliesEl.className = "comment-replies";
-            renderComments(repliesEl, item.replies, meetingId, currentUserId);
+            const flatList = flattenReplies(item.replies);
+            renderComments(repliesEl, flatList, meetingId, currentUserId, { flatReplies: true });
             wrap.appendChild(repliesEl);
         }
         container.appendChild(wrap);
