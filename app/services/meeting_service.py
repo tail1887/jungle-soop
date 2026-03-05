@@ -176,6 +176,23 @@ class MeetingService:
                 },
             }
 
+        if status == "open" and meeting.get("status") == "closed":
+            deadline_dt = _parse_dt(meeting.get("deadline_at") or meeting.get("scheduled_at"))
+            if deadline_dt is not None:
+                from datetime import datetime, timezone
+                now = datetime.now(timezone.utc).replace(tzinfo=None)
+                if now >= deadline_dt:
+                    return {
+                        "status_code": 400,
+                        "body": {
+                            "success": False,
+                            "error": {
+                                "code": "MEETING_INVALID_PAYLOAD",
+                                "message": "마감 일시가 지나 조기마감 취소할 수 없습니다.",
+                            },
+                        },
+                    }
+
         from datetime import datetime, timezone
         # Validate datetimes if any is being updated
         if "scheduled_at" in update_doc or "deadline_at" in update_doc:

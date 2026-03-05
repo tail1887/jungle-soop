@@ -416,6 +416,33 @@ async function requestJoinAction(meetingId, method) {
     return fetchJson(`/api/v1/meetings/${meetingId}/join`, { method });
 }
 
+let currentMeetingDetail = null;
+
+function updateCloseButtonState(meeting) {
+    const closeButton = document.getElementById("meeting-close-button");
+    if (!closeButton) return;
+    const status = meeting?.status || "open";
+    const deadlineAt = meeting?.deadline_at || meeting?.scheduled_at;
+    if (status === "open") {
+        closeButton.textContent = "조기마감";
+        closeButton.disabled = false;
+        closeButton.dataset.action = "close";
+        setButtonVisible(closeButton, true);
+        return;
+    }
+    if (status === "closed") {
+        const deadlinePassed = deadlineAt ? Date.now() >= Date.parse(deadlineAt) : true;
+        if (deadlinePassed) {
+            setButtonVisible(closeButton, false);
+            return;
+        }
+        closeButton.textContent = "조기마감 취소";
+        closeButton.disabled = false;
+        closeButton.dataset.action = "cancel";
+        setButtonVisible(closeButton, true);
+    }
+}
+
 function bindOwnerActions(meetingId, messageElement) {
     const editButton = document.getElementById("meeting-edit-button");
     const closeButton = document.getElementById("meeting-close-button");
@@ -427,20 +454,37 @@ function bindOwnerActions(meetingId, messageElement) {
     }
     if (closeButton) {
         closeButton.addEventListener("click", async () => {
+            const action = closeButton.dataset.action;
+            const isClosing = action === "close";
             closeButton.disabled = true;
-            setUiMessage(messageElement, "모임을 조기마감하는 중...", "");
+            setUiMessage(
+                messageElement,
+                isClosing ? "모임을 조기마감하는 중..." : "조기마감 취소하는 중...",
+                ""
+            );
             try {
                 const result = await fetchJson(`/api/v1/meetings/${meetingId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ status: "closed" }),
+                    body: JSON.stringify({ status: isClosing ? "closed" : "open" }),
                 });
                 if (!result.ok) {
-                    setUiMessage(messageElement, formatApiError(result, "조기마감에 실패했습니다."), "error");
+                    setUiMessage(
+                        messageElement,
+                        formatApiError(
+                            result,
+                            isClosing ? "조기마감에 실패했습니다." : "조기마감 취소에 실패했습니다."
+                        ),
+                        "error"
+                    );
                     return;
                 }
                 await loadMeetingDetail({ skipSuccessMessage: true });
-                setUiMessage(messageElement, "모임이 조기마감되었습니다.", "success");
+                setUiMessage(
+                    messageElement,
+                    isClosing ? "모임이 조기마감되었습니다." : "조기마감이 취소되었습니다.",
+                    "success"
+                );
             } catch (_error) {
                 setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
             } finally {
@@ -568,11 +612,13 @@ async function loadMeetingDetail(options) {
         }
 
         const meeting = result.data?.data || {};
+        currentMeetingDetail = meeting;
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
         root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · 일정 ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")} · 마감 ${pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
         setMeetingDetail(meeting);
         renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
+        updateCloseButtonState(meeting);
         if (!options?.skipSuccessMessage) {
             setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
         }
