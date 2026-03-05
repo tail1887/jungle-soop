@@ -16,6 +16,12 @@
         </select>
         <label for="scheduled_at">일시</label>
         <input id="scheduled_at" name="scheduled_at" type="datetime-local" required>
+        <label>소요 시간</label>
+        <div class="duration-input-row">
+            <input id="duration_hours" name="duration_hours" type="number" min="0" max="24" value="1" aria-label="소요 시간 시간"> <span class="duration-unit">시간</span>
+            <input id="duration_minutes" name="duration_minutes" type="number" min="0" max="59" value="0" aria-label="소요 시간 분"> <span class="duration-unit">분</span>
+        </div>
+        <p id="meeting-edit-end-time" class="helper-text">종료 예정: 일시와 소요시간을 입력하면 표시됩니다.</p>
         <label for="deadline_at">마감 기한</label>
         <input id="deadline_at" name="deadline_at" type="datetime-local">
         <label for="place">장소</label>

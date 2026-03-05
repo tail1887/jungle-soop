@@ -114,6 +114,19 @@ class MeetingService:
         meeting_doc["participants"] = [author_id]
         meeting_doc["deadline_at"] = meeting_doc.get("deadline_at") or meeting_doc["scheduled_at"]
         meeting_doc["status"] = "open"
+        duration_minutes = _to_positive_int(payload.get("duration_minutes"), default=60)
+        if duration_minutes <= 0 or duration_minutes > 24 * 60:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": "소요 시간은 1분 이상 24시간(1440분) 이하여야 합니다.",
+                    },
+                },
+            }
+        meeting_doc["duration_minutes"] = duration_minutes
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         meeting_doc["created_at"] = now
         meeting_doc["updated_at"] = now
@@ -165,6 +178,7 @@ class MeetingService:
             "max_capacity",
             "status",
             "category",
+            "duration_minutes",
         }
         update_doc = {k: v for k, v in payload.items() if k in allowed}
         if not update_doc:
@@ -178,6 +192,22 @@ class MeetingService:
                     },
                 },
             }
+
+        duration_minutes = update_doc.get("duration_minutes")
+        if duration_minutes is not None:
+            val = _to_positive_int(duration_minutes, default=None)
+            if val is None or val <= 0 or val > 24 * 60:
+                return {
+                    "status_code": 400,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "MEETING_INVALID_PAYLOAD",
+                            "message": "소요 시간은 1분 이상 24시간(1440분) 이하여야 합니다.",
+                        },
+                    },
+                }
+            update_doc["duration_minutes"] = val
 
         category = update_doc.get("category")
         if category is not None and category not in MEETING_CATEGORIES:
@@ -636,6 +666,7 @@ def _serialize_meeting_summary(meeting: dict) -> dict:
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),
         "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
+        "duration_minutes": meeting.get("duration_minutes", 60),
         "participant_count": len(participants),
         "max_capacity": meeting.get("max_capacity"),
         "status": meeting.get("status", "open"),
@@ -661,6 +692,7 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),
         "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
+        "duration_minutes": meeting.get("duration_minutes", 60),
         "participant_count": len(participants),
         "participants": participant_list,
         "max_capacity": meeting.get("max_capacity"),

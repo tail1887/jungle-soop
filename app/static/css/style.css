@@ -49,6 +49,22 @@ form {
     gap: 10px;
 }
 
+.duration-input-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.duration-input-row input {
+    width: 4rem;
+}
+
+.duration-unit {
+    margin-right: 8px;
+    color: #4b5563;
+}
+
 input,
 select,
 textarea,

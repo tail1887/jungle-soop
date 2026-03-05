@@ -117,6 +117,25 @@ function getDatetimeLocalMin() {
     return `${y}-${m}-${day}T${h}:${min}`;
 }
 
+/** duration_minutes → "1시간 30분" 형태 */
+function formatDurationMinutes(mins) {
+    if (mins == null || mins <= 0) return "";
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h && m) return `${h}시간 ${m}분`;
+    if (h) return `${h}시간`;
+    return `${m}분`;
+}
+
+/** 일시(datetime-local 또는 ISO 문자열) + 소요 분 → 종료 시각 표시 문자열 */
+function computeEndTimeDisplay(scheduledAtStr, durationMinutes) {
+    if (!scheduledAtStr || !durationMinutes) return null;
+    const start = new Date(scheduledAtStr);
+    if (Number.isNaN(start.getTime())) return null;
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")} ${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -145,12 +164,13 @@ function createMeetingListItem(meeting) {
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
     const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
+    const durationText = formatDurationMinutes(meeting.duration_minutes ?? 60);
 
     li.innerHTML = `
         <a href="/meetings/${id}">
             <strong>${title}</strong>
         </a>
-        <p>${place} · ${scheduledAt} · ${categoryLabel}</p>
+        <p>${place} · ${scheduledAt} · ${categoryLabel}${durationText ? ` · 소요 ${durationText}` : ""}</p>
         <p>마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}</p>
     `;
     return li;
@@ -299,6 +319,9 @@ function parseCreateFormPayload(form) {
     const scheduledAt = readFormField(form, ["scheduled_at", "datetime"]).trim();
     const deadlineAtInput = readFormField(form, ["deadline_at", "deadline"]).trim();
     const category = readFormField(form, ["category"]).trim() || "other";
+    const durationHours = parseInt(readFormField(form, ["duration_hours"]), 10) || 0;
+    const durationMinutesPart = parseInt(readFormField(form, ["duration_minutes"]), 10) || 0;
+    const durationMinutesTotal = durationHours * 60 + durationMinutesPart || 60;
     return {
         title: readFormField(form, ["title"]).trim(),
         category,
@@ -307,6 +330,7 @@ function parseCreateFormPayload(form) {
         place: readFormField(form, ["place", "location"]).trim(),
         description: readFormField(form, ["description"]).trim(),
         max_capacity: Number(rawMaxCapacity),
+        duration_minutes: durationMinutesTotal,
     };
 }
 
@@ -316,6 +340,9 @@ function validateCreateForm(payload) {
     }
     if (payload.max_capacity < 2 || payload.max_capacity > 20) {
         return "모집 인원은 2~20명 사이여야 합니다.";
+    }
+    if (payload.duration_minutes < 1 || payload.duration_minutes > 24 * 60) {
+        return "소요 시간은 1분 이상 24시간 이하여야 합니다.";
     }
     const now = Date.now();
     const scheduledAtTs = Date.parse(payload.scheduled_at);
@@ -358,6 +385,24 @@ function bindMeetingCreatePage() {
             }
         });
     }
+
+    const durationHoursInput = form.elements.namedItem("duration_hours");
+    const durationMinutesInput = form.elements.namedItem("duration_minutes");
+    const endTimeEl = document.getElementById("meeting-create-end-time");
+    function updateCreateFormEndTime() {
+        if (!endTimeEl) return;
+        const scheduledVal = scheduledInput?.value?.trim();
+        const h = parseInt(durationHoursInput?.value, 10) || 0;
+        const m = parseInt(durationMinutesInput?.value, 10) || 0;
+        const totalMins = h * 60 + m;
+        const text = computeEndTimeDisplay(scheduledVal, totalMins);
+        endTimeEl.textContent = text ? `종료 예정: ${text}` : "종료 예정: 일시와 소요시간을 입력하면 표시됩니다.";
+    }
+    if (scheduledInput) scheduledInput.addEventListener("input", updateCreateFormEndTime);
+    if (scheduledInput) scheduledInput.addEventListener("change", updateCreateFormEndTime);
+    if (durationHoursInput) durationHoursInput.addEventListener("input", updateCreateFormEndTime);
+    if (durationMinutesInput) durationMinutesInput.addEventListener("input", updateCreateFormEndTime);
+    updateCreateFormEndTime();
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -427,7 +472,11 @@ function setMeetingDetail(meeting) {
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
     const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
-    metaEl.textContent = `${place} · ${categoryLabel} · 일정 ${scheduledAt} · 마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
+    const durationMins = meeting.duration_minutes ?? 60;
+    const durationText = formatDurationMinutes(durationMins);
+    const endTimeStr = computeEndTimeDisplay(meeting.scheduled_at || "", durationMins);
+    const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
+    metaEl.textContent = [place, categoryLabel, `일정 ${scheduledAt}`, durationAndEnd, `마감 ${deadlineAt}`, `참여 ${count}/${maxCapacity}`, `상태 ${status}`].filter(Boolean).join(" · ");
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
@@ -679,7 +728,16 @@ async function loadMeetingDetail(options) {
         const meeting = result.data?.data || {};
         currentMeetingDetail = meeting;
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
-        root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · 일정 ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")} · 마감 ${pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
+        const durationMins = meeting.duration_minutes ?? 60;
+        const durationText = formatDurationMinutes(durationMins);
+        const endTimeStr = computeEndTimeDisplay(meeting.scheduled_at || "", durationMins);
+        const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
+        root.dataset.metaPrefix = [
+            pickFirst(meeting.place, meeting.location, "장소 미정"),
+            "일정 " + pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정"),
+            durationAndEnd,
+            "마감 " + pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정"),
+        ].filter(Boolean).join(" · ");
         setMeetingDetail(meeting);
         renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
@@ -719,6 +777,20 @@ function bindMeetingEditPage() {
         return;
     }
 
+    const scheduledInput = form.elements.namedItem("scheduled_at");
+    const durationHoursInput = form.elements.namedItem("duration_hours");
+    const durationMinutesInput = form.elements.namedItem("duration_minutes");
+    const endTimeEl = document.getElementById("meeting-edit-end-time");
+    function updateEditFormEndTime() {
+        if (!endTimeEl) return;
+        const scheduledVal = scheduledInput?.value?.trim();
+        const h = parseInt(durationHoursInput?.value, 10) || 0;
+        const m = parseInt(durationMinutesInput?.value, 10) || 0;
+        const totalMins = h * 60 + m;
+        const text = computeEndTimeDisplay(scheduledVal, totalMins);
+        endTimeEl.textContent = text ? `종료 예정: ${text}` : "종료 예정: 일시와 소요시간을 입력하면 표시됩니다.";
+    }
+
     const fillForm = (meeting) => {
         const titleField = form.elements.namedItem("title");
         const categoryField = form.elements.namedItem("category");
@@ -727,6 +799,8 @@ function bindMeetingEditPage() {
         const placeField = form.elements.namedItem("place");
         const descriptionField = form.elements.namedItem("description");
         const maxCapacityField = form.elements.namedItem("max_capacity");
+        const durationHoursField = form.elements.namedItem("duration_hours");
+        const durationMinutesField = form.elements.namedItem("duration_minutes");
         if (titleField && "value" in titleField) titleField.value = meeting.title || "";
         if (categoryField && "value" in categoryField) {
             const cat = meeting.category || "other";
@@ -737,15 +811,18 @@ function bindMeetingEditPage() {
         if (placeField && "value" in placeField) placeField.value = meeting.place || "";
         if (descriptionField && "value" in descriptionField) descriptionField.value = meeting.description || "";
         if (maxCapacityField && "value" in maxCapacityField) maxCapacityField.value = String(meeting.max_capacity || 4);
+        const durationMins = meeting.duration_minutes ?? 60;
+        if (durationHoursField && "value" in durationHoursField) durationHoursField.value = String(Math.floor(durationMins / 60));
+        if (durationMinutesField && "value" in durationMinutesField) durationMinutesField.value = String(durationMins % 60);
         const minVal = getDatetimeLocalMin();
         if (scheduledAtField) scheduledAtField.min = minVal;
         if (deadlineAtField) {
             deadlineAtField.min = minVal;
             if (scheduledAtField && scheduledAtField.value) deadlineAtField.max = scheduledAtField.value;
         }
+        if (typeof updateEditFormEndTime === "function") updateEditFormEndTime();
     };
 
-    const scheduledInput = form.elements.namedItem("scheduled_at");
     const deadlineInput = form.elements.namedItem("deadline_at");
     if (scheduledInput && deadlineInput) {
         scheduledInput.addEventListener("change", function () {
@@ -756,6 +833,10 @@ function bindMeetingEditPage() {
             }
         });
     }
+    if (scheduledInput) scheduledInput.addEventListener("input", updateEditFormEndTime);
+    if (scheduledInput) scheduledInput.addEventListener("change", updateEditFormEndTime);
+    if (durationHoursInput) durationHoursInput.addEventListener("input", updateEditFormEndTime);
+    if (durationMinutesInput) durationMinutesInput.addEventListener("input", updateEditFormEndTime);
 
     const loadForEdit = async () => {
         setUiMessage(messageElement, "수정할 모임 정보를 불러오는 중...", "");
