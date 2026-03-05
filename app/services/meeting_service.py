@@ -21,7 +21,7 @@ def _parse_dt(value):
 
 def _validate_meeting_datetimes(scheduled_at, deadline_at):
     """
-    Validate: both in future, deadline < scheduled.
+    Validate: both in future, deadline <= scheduled (미입력 시 deadline=scheduled 허용).
     Returns (True, None) or (False, error_message).
     """
     from datetime import datetime
@@ -30,7 +30,7 @@ def _validate_meeting_datetimes(scheduled_at, deadline_at):
         return False, "모임 일시는 현재 시간 이후로 설정해주세요."
     if deadline_at is not None and deadline_at <= now:
         return False, "마감 기한은 현재 시간 이후로 설정해주세요."
-    if deadline_at is not None and deadline_at >= scheduled_at:
+    if deadline_at is not None and deadline_at > scheduled_at:
         return False, "마감 기한은 모임 일시보다 이전이어야 합니다."
     return True, None
 
