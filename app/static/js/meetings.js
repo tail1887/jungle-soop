@@ -458,6 +458,7 @@ function bindMeetingCreatePage() {
 
 function setMeetingDetail(meeting) {
     const titleEl = document.getElementById("meeting-detail-title");
+    const authorEl = document.getElementById("meeting-detail-author");
     const metaEl = document.getElementById("meeting-detail-meta");
     const descEl = document.getElementById("meeting-detail-description");
     if (!titleEl || !metaEl || !descEl) {
@@ -465,6 +466,18 @@ function setMeetingDetail(meeting) {
     }
 
     titleEl.textContent = meeting.title || "제목 없음";
+    if (authorEl) {
+        const authorId = meeting.author_id || "";
+        const authorName = meeting.author_nickname != null ? String(meeting.author_nickname) : authorId || "알 수 없음";
+        const avatarUrl = meeting.author_profile_image_url || "";
+        authorEl.innerHTML = "";
+        if (authorId || authorName !== "알 수 없음") {
+            const wrap = document.createElement("div");
+            wrap.className = "meeting-detail-author-inner";
+            wrap.innerHTML = `<img class="meeting-detail-author-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(authorName)} 프로필" width="28" height="28"><span class="meeting-detail-author-label">작성자: ${escapeHtml(authorName)}</span>`;
+            authorEl.appendChild(wrap);
+        }
+    }
     const place = pickFirst(meeting.place, meeting.location, "장소 미정");
     const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
     const deadlineAt = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAt);
