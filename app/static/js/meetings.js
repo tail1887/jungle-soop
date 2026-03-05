@@ -431,31 +431,49 @@ function setMeetingDetail(meeting) {
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
-function renderMeetingParticipants(participants) {
-    const listEl = document.getElementById("meeting-participants-list");
-    const emptyEl = document.getElementById("meeting-participants-empty");
-    if (!listEl || !emptyEl) {
-        return;
-    }
+    function renderMeetingParticipants(participants) {
+        const listEl = document.getElementById("meeting-participants-list");
+        const emptyEl = document.getElementById("meeting-participants-empty");
+        if (!listEl || !emptyEl) {
+            return;
+        }
 
-    listEl.innerHTML = "";
-    const normalized = Array.isArray(participants) ? participants : [];
-    if (normalized.length === 0) {
-        emptyEl.textContent = "아직 참여자가 없습니다.";
-        return;
-    }
+        listEl.innerHTML = "";
+        const normalized = Array.isArray(participants) ? participants : [];
+        if (normalized.length === 0) {
+            emptyEl.textContent = "아직 참여자가 없습니다.";
+            return;
+        }
 
-    emptyEl.textContent = "";
-    normalized.forEach((item) => {
-        const li = document.createElement("li");
-        const displayName =
-            item && typeof item === "object" && item.nickname != null
-                ? String(item.nickname)
-                : String(item);
-        li.textContent = displayName;
-        listEl.appendChild(li);
-    });
-}
+        emptyEl.textContent = "";
+        normalized.forEach((item) => {
+            const li = document.createElement("li");
+
+            // 백엔드에서 내려주는 필드에 맞춰 userId/nickname 추출
+            const userId =
+                (item && typeof item === "object" && (item.user_id || item.id || item._id)) || "";
+            const nickname =
+                (item && typeof item === "object" && item.nickname != null
+                    ? String(item.nickname)
+                    : String(item));
+
+            if (userId) {
+                // 닉네임을 클릭 가능하게 만들고 data-user-id 심기
+                li.innerHTML = `
+                <a href="#"
+                   class="js-user-profile"
+                   data-user-id="${userId}">
+                    ${nickname}
+                </a>
+            `;
+            } else {
+                // userId가 없으면 예전처럼 텍스트만
+                li.textContent = nickname;
+            }
+
+            listEl.appendChild(li);
+        });
+    }
 
 function updateMeetingDetailCounters(detailData) {
     const root = document.getElementById("meeting-detail-root");
