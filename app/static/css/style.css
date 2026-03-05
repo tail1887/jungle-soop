@@ -1,54 +1,3 @@
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f6f7fb;
-    color: #1f2937;
-}
-
-.site-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: #111827;
-    color: #ffffff;
-}
-
-.site-header a {
-    color: #ffffff;
-    text-decoration: none;
-    margin-left: 12px;
-}
-
-.nav-button {
-    margin-left: 12px;
-    padding: 8px 12px;
-    background: #374151;
-}
-
-.container {
-    max-width: 800px;
-    margin: 24px auto;
-    padding: 0 16px;
-}
-
-.card {
-    background: #ffffff;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 .duration-input-row {
     display: flex;
     align-items: center;
@@ -63,22 +12,6 @@ form {
 .duration-unit {
     margin-right: 8px;
     color: #4b5563;
-}
-
-input,
-select,
-textarea,
-button {
-    font: inherit;
-    padding: 10px;
-}
-
-button {
-    border: none;
-    border-radius: 8px;
-    background: #2563eb;
-    color: #ffffff;
-    cursor: pointer;
 }
 
 .helper-text {
@@ -100,75 +33,9 @@ button {
     color: #059669;
 }
 
-.meeting-toolbar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.meeting-search-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.meeting-search-row input {
-    flex: 1;
-    min-width: 0;
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 1rem;
-}
-
-.meeting-search-row button {
-    padding: 8px 16px;
-    background: #2563eb;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.meeting-search-row button:hover {
-    background: #1d4ed8;
-}
-
-.meeting-toolbar-group {
-    display: flex;
-    gap: 6px;
-}
-
-.meeting-toolbar-group select {
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background: #ffffff;
-    font: inherit;
-    cursor: pointer;
-}
-
-.meeting-toolbar-group button {
-    padding: 8px 12px;
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.meeting-toolbar-group button.is-active {
-    background: #2563eb;
-    color: #ffffff;
-}
-
-.button-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: #2563eb;
-    color: #ffffff;
-    text-decoration: none;
+button.is-active {
+    background: #2563eb !important;
+    color: #ffffff !important;
 }
 
 .meeting-list {

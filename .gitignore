@@ -27,3 +27,9 @@ htmlcov/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Frontend tooling
+node_modules/
+
+# Runtime upload artifacts
+app/static/uploads/

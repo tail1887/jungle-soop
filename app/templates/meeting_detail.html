@@ -1,36 +1,36 @@
 {% extends "base.html" %}
 {% block title %}Jungle Soop | 모임 상세{% endblock %}
 {% block content %}
-<section class="card" id="meeting-detail-root" data-meeting-id="{{ meeting_id }}">
-    <h2>모임 상세</h2>
-    <p class="helper-text">meeting_id: <strong id="meeting-id-label">{{ meeting_id }}</strong></p>
-    <p id="meeting-detail-message" class="form-message" role="alert" aria-live="polite"></p>
-    <div class="meeting-detail">
-        <h3 id="meeting-detail-title">로딩 중...</h3>
+<section class="card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8" id="meeting-detail-root" data-meeting-id="{{ meeting_id }}">
+    <h2 class="text-2xl font-bold text-slate-900">모임 상세</h2>
+    <p class="helper-text mt-1 text-sm text-slate-500">meeting_id: <strong id="meeting-id-label">{{ meeting_id }}</strong></p>
+    <p id="meeting-detail-message" class="form-message mt-2 min-h-5 text-sm text-slate-600" role="alert" aria-live="polite"></p>
+    <div class="meeting-detail mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <h3 id="meeting-detail-title" class="text-lg font-semibold text-slate-900">로딩 중...</h3>
         <div id="meeting-detail-author" class="meeting-detail-author" aria-label="모임 작성자"></div>
-        <p id="meeting-detail-meta"></p>
-        <p id="meeting-detail-description"></p>
-        <h4>참여자 목록</h4>
-        <ul id="meeting-participants-list" class="meeting-list"></ul>
-        <p id="meeting-participants-empty" class="helper-text"></p>
+        <p id="meeting-detail-meta" class="mt-2 text-sm text-slate-600"></p>
+        <p id="meeting-detail-description" class="mt-2 text-sm text-slate-700"></p>
+        <h4 class="mt-4 text-base font-semibold text-slate-900">참여자 목록</h4>
+        <ul id="meeting-participants-list" class="meeting-list mt-2 grid gap-2"></ul>
+        <p id="meeting-participants-empty" class="helper-text mt-2 text-sm text-slate-500"></p>
     </div>
-    <div class="meeting-toolbar">
-        <button id="meeting-edit-button" type="button">정보수정</button>
-        <button id="meeting-close-button" type="button">조기마감</button>
-        <button id="meeting-delete-button" type="button">삭제</button>
-        <button id="meeting-join-button" type="button">참여하기</button>
-        <button id="meeting-cancel-button" type="button">참여 취소</button>
-        <button id="meeting-detail-refresh-button" type="button">상세 새로고침</button>
-        <a class="button-link" href="{{ url_for('meeting_list') }}">목록으로</a>
+    <div class="meeting-toolbar mt-4 flex flex-wrap gap-2">
+        <button id="meeting-edit-button" type="button" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">정보수정</button>
+        <button id="meeting-close-button" type="button" class="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-400">조기마감</button>
+        <button id="meeting-delete-button" type="button" class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-500">삭제</button>
+        <button id="meeting-join-button" type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500">참여하기</button>
+        <button id="meeting-cancel-button" type="button" class="rounded-lg bg-slate-600 px-3 py-2 text-sm font-medium text-white hover:bg-slate-500">참여 취소</button>
+        <button id="meeting-detail-refresh-button" type="button" class="rounded-lg bg-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300">상세 새로고침</button>
+        <a class="button-link inline-flex items-center justify-center rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white no-underline hover:bg-slate-700" href="{{ url_for('meeting_list') }}">목록으로</a>
     </div>
-    <section class="meeting-comments card">
-        <h3>댓글</h3>
-        <div id="meeting-comments-list" class="comments-list"></div>
-        <p id="meeting-comments-message" class="form-message" role="alert" aria-live="polite"></p>
-        <form id="meeting-comment-form" class="comment-form">
-            <label for="meeting-comment-body">댓글 작성</label>
-            <textarea id="meeting-comment-body" name="body" rows="3" placeholder="댓글을 입력하세요."></textarea>
-            <button type="submit">등록</button>
+    <section class="meeting-comments mt-6 rounded-xl border border-slate-200 bg-white p-4">
+        <h3 class="text-lg font-semibold text-slate-900">댓글</h3>
+        <div id="meeting-comments-list" class="comments-list mt-3"></div>
+        <p id="meeting-comments-message" class="form-message mt-2 min-h-5 text-sm text-slate-600" role="alert" aria-live="polite"></p>
+        <form id="meeting-comment-form" class="comment-form mt-3 flex flex-col gap-2">
+            <label for="meeting-comment-body" class="text-sm font-medium text-slate-700">댓글 작성</label>
+            <textarea id="meeting-comment-body" name="body" rows="3" placeholder="댓글을 입력하세요." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+            <button type="submit" class="self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">등록</button>
         </form>
     </section>
 </section>
