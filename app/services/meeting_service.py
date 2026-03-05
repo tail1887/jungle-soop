@@ -605,7 +605,16 @@ def _serialize_meeting_summary(meeting: dict) -> dict:
 
 
 def _serialize_meeting_detail(meeting: dict) -> dict:
+    from app.models.user_repository import UserRepository
+
     participants = meeting.get("participants") or []
+    participant_list = []
+    for participant_id in participants:
+        pid_str = str(participant_id)
+        user = UserRepository.find_by_id(pid_str)
+        nickname = (user.get("nickname", pid_str) if user else pid_str) or pid_str
+        participant_list.append({"user_id": pid_str, "nickname": nickname})
+
     return {
         "meeting_id": str(meeting.get("_id", "")),
         "title": meeting.get("title", ""),
@@ -614,7 +623,7 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "scheduled_at": meeting.get("scheduled_at", ""),
         "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
         "participant_count": len(participants),
-        "participants": [str(participant_id) for participant_id in participants],
+        "participants": participant_list,
         "max_capacity": meeting.get("max_capacity"),
         "status": meeting.get("status", "open"),
         "author_id": str(meeting.get("author_id", "")),

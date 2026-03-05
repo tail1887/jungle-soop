@@ -80,7 +80,9 @@ def test_get_meeting_detail_success(client):
     assert body["data"]["meeting_id"] == meeting_id
     assert body["data"]["title"] == "상세 테스트 모임"
     assert body["data"]["participant_count"] == 1
-    assert body["data"]["participants"] == ["user1"]
+    assert len(body["data"]["participants"]) == 1
+    assert body["data"]["participants"][0]["user_id"] == "user1"
+    assert "nickname" in body["data"]["participants"][0]
     assert body["data"]["deadline_at"] == body["data"]["scheduled_at"]
 
 
