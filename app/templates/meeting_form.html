@@ -7,14 +7,14 @@
     <form id="meeting-create-form" novalidate>
         <label for="title">제목</label>
         <input id="title" name="title" type="text" placeholder="모임 제목" required>
-        <label for="datetime">일시</label>
-        <input id="datetime" name="datetime" type="datetime-local" required>
-        <label for="location">장소</label>
-        <input id="location" name="location" type="text" placeholder="장소 입력" required>
+        <label for="scheduled_at">일시</label>
+        <input id="scheduled_at" name="scheduled_at" type="datetime-local" required>
+        <label for="place">장소</label>
+        <input id="place" name="place" type="text" placeholder="장소 입력" required>
         <label for="description">설명</label>
         <textarea id="description" name="description" rows="4" placeholder="모임 설명"></textarea>
-        <label for="capacity">모집 인원</label>
-        <input id="capacity" name="capacity" type="number" min="2" max="20" value="4" required>
+        <label for="max_capacity">모집 인원</label>
+        <input id="max_capacity" name="max_capacity" type="number" min="2" max="20" value="4" required>
         <p id="meeting-create-message" class="form-message" role="alert" aria-live="polite"></p>
         <button id="meeting-create-submit-button" type="submit">등록하기</button>
     </form>
