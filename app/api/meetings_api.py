@@ -57,3 +57,29 @@ def join_meeting(meeting_id: str):
 def cancel_join_meeting(meeting_id: str):
     result = MeetingService.cancel_join(meeting_id)
     return jsonify(result["body"]), result["status_code"]
+
+
+from app.services.comment_service import CommentService
+
+
+@meetings_bp.post("/<meeting_id>/comments")
+@login_required
+def create_comment(meeting_id: str):
+    payload = request.get_json(silent=True) or {}
+    result = CommentService.create(meeting_id, payload)
+    return jsonify(result["body"]), result["status_code"]
+
+
+@meetings_bp.get("/<meeting_id>/comments")
+def list_comments(meeting_id: str):
+    result = CommentService.list(meeting_id)
+    return jsonify(result["body"]), result["status_code"]
+
+
+@meetings_bp.delete("/<meeting_id>/comments/<comment_id>")
+@login_required
+def delete_comment(meeting_id: str, comment_id: str):
+    result = CommentService.delete(meeting_id, comment_id)
+    if result["status_code"] == 204:
+        return "", 204
+    return jsonify(result["body"]), result["status_code"]
