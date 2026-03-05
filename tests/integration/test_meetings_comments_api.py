@@ -115,3 +115,32 @@ def test_delete_comment_forbidden_if_not_author(client):
         headers=_auth_headers("user2-token"),
     )
     assert response.status_code == 403
+
+
+@pytest.mark.integration
+def test_create_reply_and_list_nested(client):
+    meeting_id = _create_meeting(client)
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+    parent_res = client.post(
+        f"/api/v1/meetings/{meeting_id}/comments",
+        json={"body": "부모 댓글"},
+        headers=_auth_headers(),
+    )
+    parent_id = parent_res.get_json()["data"]["comment_id"]
+    reply_res = client.post(
+        f"/api/v1/meetings/{meeting_id}/comments",
+        json={"body": "대댓글", "parent_id": parent_id},
+        headers=_auth_headers(),
+    )
+    assert reply_res.status_code == 201
+    assert reply_res.get_json()["data"].get("parent_id") == parent_id
+
+    list_res = client.get(f"/api/v1/meetings/{meeting_id}/comments")
+    assert list_res.status_code == 200
+    items = list_res.get_json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["body"] == "부모 댓글"
+    assert "replies" in items[0]
+    assert len(items[0]["replies"]) == 1
+    assert items[0]["replies"][0]["body"] == "대댓글"
