@@ -419,6 +419,7 @@ async function requestJoinAction(meetingId, method) {
 function bindOwnerActions(meetingId, messageElement) {
     const editButton = document.getElementById("meeting-edit-button");
     const closeButton = document.getElementById("meeting-close-button");
+    const deleteButton = document.getElementById("meeting-delete-button");
     if (editButton) {
         editButton.addEventListener("click", () => {
             window.location.href = `/meetings/${meetingId}/edit`;
@@ -447,6 +448,28 @@ function bindOwnerActions(meetingId, messageElement) {
             }
         });
     }
+    if (deleteButton) {
+        deleteButton.addEventListener("click", async () => {
+            if (!window.confirm("이 모임을 삭제하시겠습니까?")) {
+                return;
+            }
+            deleteButton.disabled = true;
+            setUiMessage(messageElement, "모임을 삭제하는 중...", "");
+            try {
+                const result = await fetchJson(`/api/v1/meetings/${meetingId}`, { method: "DELETE" });
+                if (result.status === 204 || result.ok) {
+                    setUiMessage(messageElement, "모임이 삭제되었습니다. 목록으로 이동합니다.", "success");
+                    window.location.href = "/meetings";
+                    return;
+                }
+                setUiMessage(messageElement, formatApiError(result, "모임 삭제에 실패했습니다."), "error");
+            } catch (_error) {
+                setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
+            } finally {
+                deleteButton.disabled = false;
+            }
+        });
+    }
 }
 
 function setButtonVisible(element, visible) {
@@ -463,11 +486,13 @@ function applyDetailActionVisibility(meeting) {
 
     const editButton = document.getElementById("meeting-edit-button");
     const closeButton = document.getElementById("meeting-close-button");
+    const deleteButton = document.getElementById("meeting-delete-button");
     const joinButton = document.getElementById("meeting-join-button");
     const cancelButton = document.getElementById("meeting-cancel-button");
 
     setButtonVisible(editButton, isAuthor);
     setButtonVisible(closeButton, isAuthor);
+    setButtonVisible(deleteButton, isAuthor);
     setButtonVisible(joinButton, !isAuthor);
     setButtonVisible(cancelButton, !isAuthor);
 }
