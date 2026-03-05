@@ -416,6 +416,7 @@ sequenceDiagram
 | `PERMISSION_DENIED` | `403`       | 작성자 권한 없음   |
 | `MEETING_NOT_FOUND` | `404`       | 모임 없음       |
 | `MEETING_FULL`      | `409`       | 정원 초과       |
+| `MEETING_CLOSED`    | `409`       | 이미 마감된 모임   |
 | `ALREADY_JOINED`    | `409`       | 이미 참여한 사용자  |
 
 
@@ -596,7 +597,8 @@ sequenceDiagram
 {
   "title": "저녁 같이 먹을 사람 (시간 변경)",
   "scheduled_at": "2026-03-05T19:00:00+09:00",
-  "deadline_at": "2026-03-05T18:00:00+09:00"
+  "deadline_at": "2026-03-05T18:00:00+09:00",
+  "status": "closed"
 }
 ```
 

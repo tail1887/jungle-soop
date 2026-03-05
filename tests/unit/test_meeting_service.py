@@ -60,6 +60,17 @@ def test_update_meeting_success(monkeypatch):
     assert result["status_code"] == 200
     assert result["body"]["data"]["meeting_id"] == "dummyid"
 
+
+def test_update_meeting_invalid_status(monkeypatch):
+    monkeypatch.setattr(
+        "app.models.meeting_repository.MeetingRepository.find_by_id",
+        lambda id: {"_id": id, "author_id": "user1"},
+    )
+    monkeypatch.setattr("app.models.meeting_repository.MeetingRepository.update_by_id", lambda id, doc: True)
+    result = MeetingService.update("dummyid", {"status": "paused"})
+    assert result["status_code"] == 400
+    assert result["body"]["error"]["code"] == "MEETING_INVALID_PAYLOAD"
+
 def test_delete_meeting_success(monkeypatch):
     # MeetingRepository.find_by_id, delete_by_id를 mock 처리
     monkeypatch.setattr("app.models.meeting_repository.MeetingRepository.find_by_id", lambda id: {"_id": id, "author_id": "user1"})
@@ -130,6 +141,16 @@ def test_join_meeting_not_found(monkeypatch):
     result = MeetingService.join("notfound")
     assert result["status_code"] == 404
     assert result["body"]["error"]["code"] == "MEETING_NOT_FOUND"
+
+
+def test_join_meeting_closed(monkeypatch):
+    meeting = {"_id": "id1", "max_capacity": 5, "participants": [], "status": "closed"}
+    monkeypatch.setattr(
+        "app.models.meeting_repository.MeetingRepository.find_by_id", lambda _id: meeting
+    )
+    result = MeetingService.join("id1")
+    assert result["status_code"] == 409
+    assert result["body"]["error"]["code"] == "MEETING_CLOSED"
 
 def test_cancel_join_success(monkeypatch):
     before = {"_id": "id1", "participants": ["user1"], "status": "open"}

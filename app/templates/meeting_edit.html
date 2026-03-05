@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Jungle Soop | 모임 수정{% endblock %}
+{% block content %}
+<section class="card" id="meeting-edit-root" data-meeting-id="{{ meeting_id }}">
+    <h2>모임 수정</h2>
+    <p class="helper-text">작성자만 모임 정보를 수정할 수 있습니다.</p>
+    <form id="meeting-edit-form" novalidate>
+        <label for="title">제목</label>
+        <input id="title" name="title" type="text" placeholder="모임 제목" required>
+        <label for="scheduled_at">일시</label>
+        <input id="scheduled_at" name="scheduled_at" type="datetime-local" required>
+        <label for="deadline_at">마감 기한</label>
+        <input id="deadline_at" name="deadline_at" type="datetime-local">
+        <label for="place">장소</label>
+        <input id="place" name="place" type="text" placeholder="장소 입력" required>
+        <label for="description">설명</label>
+        <textarea id="description" name="description" rows="4" placeholder="모임 설명"></textarea>
+        <label for="max_capacity">모집 인원</label>
+        <input id="max_capacity" name="max_capacity" type="number" min="2" max="20" required>
+        <p id="meeting-edit-message" class="form-message" role="alert" aria-live="polite"></p>
+        <button id="meeting-edit-submit-button" type="submit">수정하기</button>
+        <a class="button-link" href="{{ url_for('meeting_detail', meeting_id=meeting_id) }}">상세로 돌아가기</a>
+    </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/meetings.js') }}"></script>
+{% endblock %}
