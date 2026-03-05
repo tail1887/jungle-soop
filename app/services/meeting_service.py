@@ -229,81 +229,6 @@ class MeetingService:
 
     @staticmethod
     def join(meeting_id: str) -> dict:
-        # 참여 처리: 중복 방지, 정원 검증
-        from app.models.meeting_repository import MeetingRepository
-        from flask import session
-
-        user_id = session.get("user_id") # 로그인한 사용자 ID 가져오기, guard로 로그인 보장, 로그인 안 된 경우 401 반환
-        if not user_id:
-            return {
-                "status_code": 401,
-                "body": {
-                    "success": False,
-                    "error": {
-                        "code": "UNAUTHORIZED",
-                        "message": "로그인이 필요합니다.",
-                    },
-                },
-            }
-
-        # 모임 조회
-        meeting = MeetingRepository.find_by_id(meeting_id)
-        if not meeting:
-            return {
-                "status_code": 404,
-                "body": {
-                    "success": False,
-                    "error": {
-                        "code": "MEETING_NOT_FOUND",
-                        "message": "해당 모임을 찾을 수 없습니다.",
-                    },
-                },
-            }
-
-        # 정원 체크
-        participants = meeting.get("participants", []) # 현재 참여자 목록
-        max_capacity = meeting.get("max_capacity", 0) # 최대 정원 
-        if len(participants) >= max_capacity:
-            return {
-                "status_code": 409,
-                "body": {
-                    "success": False,
-                    "error": {
-                        "code": "MEETING_FULL",
-                        "message": "모임 정원이 가득 찼습니다.",
-                    },
-                },
-            }
-
-        # 중복 참여 확인
-        if user_id in participants: # 이미 참여한 사용자인 경우 409 반환
-            return {
-                "status_code": 409,
-                "body": {
-                    "success": False,
-                    "error": {
-                        "code": "ALREADY_JOINED",
-                        "message": "이미 참여한 모임입니다.",
-                    },
-                },
-            }
-
-        # 참여자 추가
-        MeetingRepository.add_participant(meeting_id, user_id)
-
-        return {
-            "status_code": 201,
-            "body": {
-                "success": True,
-                "data": {"meeting_id": meeting_id},
-                "message": "모임 참여가 완료되었습니다.",
-            },
-        }
-
-    @staticmethod
-    def cancel_join(meeting_id: str) -> dict:
-        # 참여 취소 처리
-        from app.models.meeting_repository import MeetingRepository
         from flask import session
 
         user_id = session.get("user_id")
@@ -319,7 +244,6 @@ class MeetingService:
                 },
             }
 
-        # 모임 조회
         meeting = MeetingRepository.find_by_id(meeting_id)
         if not meeting:
             return {
@@ -333,7 +257,114 @@ class MeetingService:
                 },
             }
 
-        # 참여자 확인
+        participants = meeting.get("participants", [])
+        if user_id in participants:
+            return {
+                "status_code": 409,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "ALREADY_JOINED",
+                        "message": "이미 참여한 모임입니다.",
+                    },
+                },
+            }
+
+        max_capacity = meeting.get("max_capacity", 0)
+        if len(participants) >= max_capacity:
+            return {
+                "status_code": 409,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_FULL",
+                        "message": "모임 정원이 가득 찼습니다.",
+                    },
+                },
+            }
+
+        matched, modified = MeetingRepository.add_participant(meeting_id, user_id)
+        if not matched:
+            return {
+                "status_code": 404,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_NOT_FOUND",
+                        "message": "해당 모임을 찾을 수 없습니다.",
+                    },
+                },
+            }
+        if not modified:
+            refreshed = MeetingRepository.find_by_id(meeting_id) or meeting
+            refreshed_participants = refreshed.get("participants", [])
+            if user_id in refreshed_participants:
+                return {
+                    "status_code": 409,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "ALREADY_JOINED",
+                            "message": "이미 참여한 모임입니다.",
+                        },
+                    },
+                }
+            if len(refreshed_participants) >= refreshed.get("max_capacity", 0):
+                return {
+                    "status_code": 409,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "MEETING_FULL",
+                            "message": "모임 정원이 가득 찼습니다.",
+                        },
+                    },
+                }
+
+        refreshed = MeetingRepository.find_by_id(meeting_id) or meeting
+        return {
+            "status_code": 200,
+            "body": {
+                "success": True,
+                "data": {
+                    "meeting_id": meeting_id,
+                    "participant_count": len(refreshed.get("participants", [])),
+                    "status": refreshed.get("status", "open"),
+                },
+                "message": "모임 참여가 완료되었습니다.",
+            },
+        }
+
+    @staticmethod
+    def cancel_join(meeting_id: str) -> dict:
+        from flask import session
+
+        user_id = session.get("user_id")
+        if not user_id:
+            return {
+                "status_code": 401,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "UNAUTHORIZED",
+                        "message": "로그인이 필요합니다.",
+                    },
+                },
+            }
+
+        meeting = MeetingRepository.find_by_id(meeting_id)
+        if not meeting:
+            return {
+                "status_code": 404,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_NOT_FOUND",
+                        "message": "해당 모임을 찾을 수 없습니다.",
+                    },
+                },
+            }
+
         participants = meeting.get("participants", [])
         if user_id not in participants:
             return {
@@ -347,12 +378,42 @@ class MeetingService:
                 },
             }
 
-        # 참여자 제거
-        MeetingRepository.remove_participant(meeting_id, user_id)
+        matched, modified = MeetingRepository.remove_participant(meeting_id, user_id)
+        if not matched:
+            return {
+                "status_code": 404,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_NOT_FOUND",
+                        "message": "해당 모임을 찾을 수 없습니다.",
+                    },
+                },
+            }
+        if not modified:
+            return {
+                "status_code": 409,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "NOT_JOINED",
+                        "message": "참여하지 않은 모임입니다.",
+                    },
+                },
+            }
 
+        refreshed = MeetingRepository.find_by_id(meeting_id) or meeting
         return {
-            "status_code": 204,
-            "body": None,
+            "status_code": 200,
+            "body": {
+                "success": True,
+                "data": {
+                    "meeting_id": meeting_id,
+                    "participant_count": len(refreshed.get("participants", [])),
+                    "status": refreshed.get("status", "open"),
+                },
+                "message": "모임 참여가 취소되었습니다.",
+            },
         }
 
 
