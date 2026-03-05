@@ -8,16 +8,24 @@ def _parse_dt(value):
     if value is None:
         return None
     from datetime import datetime, timezone
+
     if hasattr(value, "timestamp"):
         dt = value
-    else:
-        s = str(value).strip().replace("Z", "+00:00")
-        try:
-            dt = datetime.fromisoformat(s)
-        except (ValueError, TypeError):
-            return None
+        if dt.tzinfo is None:
+            # MongoDB 등에서 오는 naive datetime은 UTC로 간주
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    s = str(value).strip().replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(s)
+    except (ValueError, TypeError):
+        return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        # 폼/브라우저에서 시간대 없이 보낸 경우 → 서버 로컬 시간으로 간주 후 UTC로 변환
+        try:
+            dt = dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
+        except Exception:
+            dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc).replace(tzinfo=None)
 
 
@@ -395,7 +403,7 @@ class MeetingService:
         paginated_meetings = sorted_meetings[start_idx:end_idx]
 
         total_count = len(all_meetings)
-        items = [_serialize_meeting_summary(meeting) for meeting in paginated_meetings]
+        items = [_serialize_meeting_summary(_ensure_past_meeting_closed(meeting)) for meeting in paginated_meetings]
 
         return {
             "status_code": 200,
@@ -429,6 +437,7 @@ class MeetingService:
                 },
             }
 
+        meeting = _ensure_past_meeting_closed(meeting)
         return {
             "status_code": 200,
             "body": {
@@ -655,6 +664,31 @@ def _to_positive_int(value, default: int) -> int:
     except (TypeError, ValueError):
         return default
     return converted if converted > 0 else default
+
+
+def _ensure_past_meeting_closed(meeting: dict) -> dict:
+    """
+    모임 시작 시각(scheduled_at)이 이미 지났고 status가 open이면
+    DB를 closed로 한 번 갱신하고 반환용 meeting에도 status를 closed로 반영한다.
+    """
+    from datetime import datetime, timezone
+
+    if not meeting:
+        return meeting
+    scheduled_dt = _parse_dt(meeting.get("scheduled_at"))
+    if scheduled_dt is None:
+        return meeting
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if scheduled_dt >= now:
+        return meeting
+    if meeting.get("status") != "open":
+        return meeting
+    meeting_id = str(meeting.get("_id", ""))
+    if not meeting_id:
+        return meeting
+    MeetingRepository.update_by_id(meeting_id, {"status": "closed"})
+    meeting["status"] = "closed"
+    return meeting
 
 
 def _serialize_meeting_summary(meeting: dict) -> dict:
