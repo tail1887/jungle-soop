@@ -527,15 +527,27 @@ function setMeetingDetail(meeting) {
     const durationText = formatDurationMinutes(durationMins);
     const endTimeStr = computeEndTimeDisplay(scheduledAtRaw, durationMins);
     const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
-    metaEl.innerHTML = [
+    const row1 = [
         `<span class="font-medium text-slate-700">카테고리</span> ${escapeHtml(categoryLabel)}`,
         `<span class="font-medium text-slate-700">장소</span> ${escapeHtml(place)}`,
+    ].join(' <span class="text-slate-300">|</span> ');
+    const row2 = [
         `<span class="font-medium text-slate-700">일정</span> ${escapeHtml(scheduledAt)}`,
         durationAndEnd ? `<span class="font-medium text-slate-700">소요/종료</span> ${escapeHtml(durationAndEnd.replace("소요 ", ""))}` : "",
+    ].filter(Boolean).join(' <span class="text-slate-300">|</span> ');
+    const row3 = [
         `<span class="font-medium text-slate-700">마감</span> ${escapeHtml(deadlineAt)}`,
         `<span class="font-medium text-slate-700">참여</span> ${escapeHtml(`${count}/${maxCapacity}`)}`,
         `<span class="font-medium text-slate-700">상태</span> ${escapeHtml(statusLabel)}`,
-    ].filter(Boolean).join(" <span class=\"text-slate-300\">|</span> ");
+    ].join(' <span class="text-slate-300">|</span> ');
+
+    metaEl.innerHTML = `
+        <div class="space-y-1">
+            <p>${row1}</p>
+            <p>${row2}</p>
+            <p>${row3}</p>
+        </div>
+    `;
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
