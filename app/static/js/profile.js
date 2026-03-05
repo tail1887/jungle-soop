@@ -232,6 +232,7 @@ function setTabButtonActive(tabName) {
         }
         const active = button.dataset.tab === tabName;
         button.disabled = active;
+        button.classList.toggle("is-active", active);
     });
 }
 
