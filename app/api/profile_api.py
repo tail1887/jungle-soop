@@ -32,7 +32,7 @@ def get_my_profile():
 @login_required # 수정할 때도 당연히 로그인필요
 def update_my_profile():
     # 1. 클라이언트가 보낸 JSON 데이터 가져오기
-    payload = request.get_json()
+    payload = request.get_json(silent=True) or {}
     new_nickname = (payload.get("nickname") or "").strip()
 
     # 2. 필수 값 체크 (빈 닉네임은 허용하지 않음)
@@ -44,7 +44,12 @@ def update_my_profile():
 
     # 3. DB 업데이트 (g.user_id 사용)
     user_id = g.user_id
-    UserRepository.update_user(user_id, {"nickname": new_nickname})
+    updated = UserRepository.update_user(user_id, {"nickname": new_nickname})
+    if not updated:
+        return jsonify({
+            "success": False,
+            "error": {"code": "USER_NOT_FOUND", "message": "사용자를 찾을 수 없습니다."}
+        }), 404
 
     return jsonify({
         "success": True,
@@ -59,16 +64,19 @@ def get_created_meetings():
     meetings = MeetingRepository.find_created_meetings_by_user(user_id)
 
     def serialize_meeting(doc):
+        participants = doc.get("participants", [])
         return {
-            "id": str(doc["_id"]),
+            "meeting_id": str(doc["_id"]),
             "title": doc.get("title"),
             "description": doc.get("description"),
-            "host_id": doc.get("host_id"),
+            "author_id": doc.get("author_id"),
             "status": doc.get("status"),
-            "max_participants": doc.get("max_participants"),
-            "participants": doc.get("participants", []),
-            "starts_at": doc.get("starts_at"),
-            "ends_at": doc.get("ends_at"),
+            "max_capacity": doc.get("max_capacity"),
+            "participants": participants,
+            "participant_count": len(participants),
+            "place": doc.get("place"),
+            "scheduled_at": doc.get("scheduled_at"),
+            "deadline_at": doc.get("deadline_at") or doc.get("scheduled_at"),
         }
 
     return jsonify({
@@ -92,16 +100,19 @@ def get_joined_active_meetings():
     meetings = MeetingRepository.find_joined_active_meetings_by_user(user_id)
 
     def serialize_meeting(doc):
+        participants = doc.get("participants", [])
         return {
-            "id": str(doc["_id"]),
+            "meeting_id": str(doc["_id"]),
             "title": doc.get("title"),
             "description": doc.get("description"),
-            "host_id": doc.get("host_id"),
+            "author_id": doc.get("author_id"),
             "status": doc.get("status"),
-            "max_participants": doc.get("max_participants"),
-            "participants": doc.get("participants", []),
-            "starts_at": doc.get("starts_at"),
-            "ends_at": doc.get("ends_at"),
+            "max_capacity": doc.get("max_capacity"),
+            "participants": participants,
+            "participant_count": len(participants),
+            "place": doc.get("place"),
+            "scheduled_at": doc.get("scheduled_at"),
+            "deadline_at": doc.get("deadline_at") or doc.get("scheduled_at"),
         }
 
     return jsonify({
@@ -124,16 +135,19 @@ def get_joined_past_meetings():
     meetings = MeetingRepository.find_joined_past_meetings_by_user(user_id)
 
     def serialize_meeting(doc):
+        participants = doc.get("participants", [])
         return {
-            "id": str(doc["_id"]),
+            "meeting_id": str(doc["_id"]),
             "title": doc.get("title"),
             "description": doc.get("description"),
-            "host_id": doc.get("host_id"),
+            "author_id": doc.get("author_id"),
             "status": doc.get("status"),
-            "max_participants": doc.get("max_participants"),
-            "participants": doc.get("participants", []),
-            "starts_at": doc.get("starts_at"),
-            "ends_at": doc.get("ends_at"),
+            "max_capacity": doc.get("max_capacity"),
+            "participants": participants,
+            "participant_count": len(participants),
+            "place": doc.get("place"),
+            "scheduled_at": doc.get("scheduled_at"),
+            "deadline_at": doc.get("deadline_at") or doc.get("scheduled_at"),
         }
 
     return jsonify({

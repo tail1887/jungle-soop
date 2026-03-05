@@ -9,7 +9,11 @@ class UserRepository:
 
     @staticmethod
     def find_by_id(user_id: str):
-        return get_database(current_app).users.find_one({"_id": ObjectId(user_id)})
+        try:
+            oid = ObjectId(user_id)
+        except Exception:
+            return None
+        return get_database(current_app).users.find_one({"_id": oid})
 
     @staticmethod
     def create_user(user_doc: dict):
@@ -18,8 +22,13 @@ class UserRepository:
 
     @staticmethod
     def update_user(user_id: str, update_data: dict):
-    # $set을 사용하면 전달된 필드만 딱 골라서 수정합니다.
-        return get_database(current_app).users.update_one(
-            {"_id": ObjectId(user_id)},
+        # $set을 사용하면 전달된 필드만 딱 골라서 수정합니다.
+        try:
+            oid = ObjectId(user_id)
+        except Exception:
+            return False
+        result = get_database(current_app).users.update_one(
+            {"_id": oid},
             {"$set": update_data}
         )
+        return result.matched_count > 0

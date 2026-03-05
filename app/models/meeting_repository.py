@@ -79,14 +79,14 @@ class MeetingRepository:
 
     @staticmethod
     def find_by_host_id(host_id: str):
-        """host_id 가 주어진 사용자인 모임 목록 (방장 모임 목록)"""
+        """author_id 가 주어진 사용자인 모임 목록"""
         db = get_database(current_app)
-        cursor = db.meetings.find({"host_id": host_id})
+        cursor = db.meetings.find({"author_id": host_id})
         return list(cursor)
 
     @staticmethod
     def find_created_meetings_by_user(user_id: str):
-        """user_id 가 생성한 모임 목록 (host_id == user_id)"""
+        """user_id 가 생성한 모임 목록 (author_id == user_id)"""
         # find_by_host_id 에 위임
         return MeetingRepository.find_by_host_id(user_id)
 
@@ -95,8 +95,8 @@ class MeetingRepository:
         db = get_database(current_app)
         cursor = db.meetings.find({
             "participants": user_id,
-            "status": "active",
-            "host_id": {"$ne": user_id},
+            "status": "open",
+            "author_id": {"$ne": user_id},
         })
         return list(cursor)
 
@@ -105,12 +105,12 @@ class MeetingRepository:
         """
         사용자가 과거에 참여했던(종료된) 모임 목록 조회.
         - participants 배열에 user_id 가 포함
-        - status 가 'closed' 또는 'finished' 등 'active' 가 아닌 값
+        - status 가 'closed'
         """
         db = get_database(current_app)
         cursor = db.meetings.find({
             "participants": user_id,
-            "status": {"$ne": "active"},
-            "host_id": {"$ne": user_id},
+            "status": "closed",
+            "author_id": {"$ne": user_id},
         })
         return list(cursor)
