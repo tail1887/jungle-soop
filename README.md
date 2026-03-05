@@ -1054,6 +1054,7 @@ docker compose -f docker/docker-compose.test.yml down -v
 기능 브랜치에서 구현 + 테스트를 동시에 진행합니다.
 배포 환경은 미니 프로젝트 특성상 **단일 EC2 서버 1대**를 사용합니다.
 아래 체크리스트는 **완료 시점 기준(실제 머지 순서 최대한 반영)** 으로 관리합니다.
+단계 구분은 팀 협업 가독성을 위한 운영 라벨이며, 같은 단계 안에서는 머지 순서를 우선 반영합니다.
 
 #### 🌱 Branch: `main`
 - [x] Initial commit: 프로젝트 문서/기준 정리
@@ -1105,6 +1106,11 @@ docker compose -f docker/docker-compose.test.yml down -v
   - **선택 GitHub Secrets**
     - `EC2_APP_DIR`: 서버 배포 디렉토리 (미설정 시 기본값 `~/jungle-soop`)
 
+#### ⚙️ Branch: `feature/deploy-ec2` (배포)
+- [x] feat: 단일 EC2 서버 배포 스크립트/절차 작성
+- [x] feat: Docker 기반 배포 검증
+- [x] docs: 배포/운영 체크리스트 문서화
+
 #### ⚙️ Branch: `feature/db-connection-foundation` (DB 연결 기반 / 초기 세팅 우선)
 - [x] feat: `app/db.py` 추가 (Mongo 클라이언트/DB 핸들러)
 - [x] feat: `create_app()`에서 `MONGO_URI`, `MONGO_DB_NAME` 초기화
@@ -1115,6 +1121,8 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] feat: 인증/모임 API 엔드포인트 스켈레톤 추가
 - [x] test: 브랜치별 통합 테스트 템플릿 파일 추가
 - [x] docs: `docs/backend-handcoding-workbook.md` 교재 파일 추가
+
+#### 🔐 Phase: 인증/인가
 
 #### 🌿 Branch: `feature/auth-signup` (회원가입)
 - [x] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
@@ -1150,6 +1158,23 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] fix: 중복 참여/정원 초과 방지 로직 적용
 - [x] test: 참여/취소/충돌(409) 테스트
 
+#### 👤 Phase: 프로필 API
+
+#### 🌿 Branch: `feature/profile-api` (프로필 정보 API)
+- [x] feat: `GET /api/v1/profile/me` 구현 (내 정보 조회)
+- [x] feat: `PATCH /api/v1/profile/me` 구현 (내 정보 수정)
+- [x] test: 프로필 조회/수정 API 테스트
+- [x] test: 프로필 수정 후 재조회 일관성 테스트
+
+#### 🌿 Branch: `feature/profile-meetings-query` (프로필 모임 조회 API)
+- [x] feat: 내가 만든 모임 목록 조회 API
+- [x] feat: 내가 현재 참여 중인 모임 목록 조회 API
+- [x] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
+- [x] test: 모임 유형(created/joined_active/joined_past)별 조회 테스트
+- [x] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
+
+#### 🖥️ Phase: 프론트 UI
+
 #### 🎨 Branch: `feature/ui-auth-pages` (인증 화면 연동)
 - [x] feat: 로그인/회원가입 페이지 작성
 - [x] feat: 폼 검증/오류 메시지 처리
@@ -1171,23 +1196,12 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] feat: 로그아웃 시 토큰 정리 및 로그인 리다이렉트 처리
 - [x] test: 로그인 유지/로그아웃/401 리다이렉트 수동 시나리오 점검
 
-#### 🌿 Branch: `feature/profile-api` (프로필 정보 API)
-- [x] feat: `GET /api/v1/profile/me` 구현 (내 정보 조회)
-- [x] feat: `PATCH /api/v1/profile/me` 구현 (내 정보 수정)
-- [x] test: 프로필 조회/수정 API 테스트
-- [x] test: 프로필 수정 후 재조회 일관성 테스트
-
-#### 🌿 Branch: `feature/profile-meetings-query` (프로필 모임 조회 API)
-- [x] feat: 내가 만든 모임 목록 조회 API
-- [x] feat: 내가 현재 참여 중인 모임 목록 조회 API
-- [x] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
-- [x] test: 모임 유형(created/joined_active/joined_past)별 조회 테스트
-- [x] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
-
 #### 🎨 Branch: `feature/profile-ui` (프로필 화면 연동)
 - [x] feat: 프로필 페이지 UI(내 정보 카드 + 수정 폼) 구현
 - [x] feat: 모임 탭 UI(만든 모임/참여 중/참여했던 모임) 구현
 - [x] test: 프로필 화면 주요 시나리오 수동 테스트
+
+#### 🚀 Phase: 확장 기능/마감 준비
 
 #### 🚀 Next Expansion Plan (팀 합의안)
 - [ ] 1) `feature/profile-avatar`  
@@ -1200,13 +1214,8 @@ docker compose -f docker/docker-compose.test.yml down -v
   Tailwind 기반 UI 리뉴얼(기능 확장 후 화면 단위로 점진 전환)
 - [ ] 5) `docs/final-project-docs`  
   개발 문서 최종 정리 (API/스키마/운영 규칙 동기화)
-- [ ] 6) `docs/ppt-demo`  
+- [ ] 6) `docs/ppt-demo`
   발표자료(PPT) 정리 및 데모 시나리오 확정
-
-#### ⚙️ Branch: `feature/deploy-ec2` (배포)
-- [x] feat: 단일 EC2 서버 배포 스크립트/절차 작성
-- [x] feat: Docker 기반 배포 검증
-- [x] docs: 배포/운영 체크리스트 문서화
 
 #### 📝 Merge to `main`
 - [ ] 기능 브랜치 병합 완료
