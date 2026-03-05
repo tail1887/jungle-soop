@@ -106,6 +106,7 @@ function createMeetingListItem(meeting) {
     const title = meeting.title || "제목 없음";
     const place = pickFirst(meeting.place, meeting.location, "장소 미정");
     const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
+    const deadlineAt = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAt);
     const count = meeting.participant_count ?? 0;
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
@@ -115,7 +116,7 @@ function createMeetingListItem(meeting) {
             <strong>${title}</strong>
         </a>
         <p>${place} · ${scheduledAt}</p>
-        <p>참여 ${count}/${maxCapacity} · 상태 ${status}</p>
+        <p>마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}</p>
     `;
     return li;
 }
@@ -168,9 +169,12 @@ function bindMeetingsListPage() {
 
 function parseCreateFormPayload(form) {
     const rawMaxCapacity = readFormField(form, ["max_capacity", "capacity"]);
+    const scheduledAt = readFormField(form, ["scheduled_at", "datetime"]).trim();
+    const deadlineAtInput = readFormField(form, ["deadline_at", "deadline"]).trim();
     return {
         title: readFormField(form, ["title"]).trim(),
-        scheduled_at: readFormField(form, ["scheduled_at", "datetime"]).trim(),
+        scheduled_at: scheduledAt,
+        deadline_at: deadlineAtInput || scheduledAt,
         place: readFormField(form, ["place", "location"]).trim(),
         description: readFormField(form, ["description"]).trim(),
         max_capacity: Number(rawMaxCapacity),
@@ -183,6 +187,11 @@ function validateCreateForm(payload) {
     }
     if (payload.max_capacity < 2 || payload.max_capacity > 20) {
         return "모집 인원은 2~20명 사이여야 합니다.";
+    }
+    const scheduledAtTs = Date.parse(payload.scheduled_at);
+    const deadlineAtTs = Date.parse(payload.deadline_at);
+    if (!Number.isNaN(scheduledAtTs) && !Number.isNaN(deadlineAtTs) && deadlineAtTs > scheduledAtTs) {
+        return "마감 기한은 모임 일시보다 늦을 수 없습니다.";
     }
     return "";
 }
@@ -258,10 +267,11 @@ function setMeetingDetail(meeting) {
     titleEl.textContent = meeting.title || "제목 없음";
     const place = pickFirst(meeting.place, meeting.location, "장소 미정");
     const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
+    const deadlineAt = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAt);
     const count = meeting.participant_count ?? 0;
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
-    metaEl.textContent = `${place} · ${scheduledAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
+    metaEl.textContent = `${place} · 일정 ${scheduledAt} · 마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
@@ -414,7 +424,7 @@ async function loadMeetingDetail(options) {
 
         const meeting = result.data?.data || {};
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
-        root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
+        root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · 일정 ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")} · 마감 ${pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
         setMeetingDetail(meeting);
         renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
