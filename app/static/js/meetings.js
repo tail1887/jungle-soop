@@ -392,9 +392,13 @@ function renderMeetingParticipants(participants) {
     }
 
     emptyEl.textContent = "";
-    normalized.forEach((participantId) => {
+    normalized.forEach((item) => {
         const li = document.createElement("li");
-        li.textContent = String(participantId);
+        const displayName =
+            item && typeof item === "object" && item.nickname != null
+                ? String(item.nickname)
+                : String(item);
+        li.textContent = displayName;
         listEl.appendChild(li);
     });
 }
