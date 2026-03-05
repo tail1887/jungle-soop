@@ -105,7 +105,11 @@ async function fetchJson(url, options) {
     if (token) {
         mergedHeaders.Authorization = `Bearer ${token}`;
     }
-    const response = await fetch(url, { ...requestOptions, headers: mergedHeaders });
+    const response = await fetch(url, {
+        ...requestOptions,
+        headers: mergedHeaders,
+        credentials: "include",
+    });
     const data = await response.json().catch(() => ({}));
     return { ok: response.ok, status: response.status, data };
 }
@@ -540,6 +544,11 @@ function bindMeetingEditPage() {
                 body: JSON.stringify(payload),
             });
             if (!result.ok) {
+                if (result.status === 401) {
+                    setUiMessage(messageElement, "로그인이 필요합니다. 로그인 페이지로 이동합니다.", "error");
+                    window.location.href = "/login";
+                    return;
+                }
                 setUiMessage(messageElement, formatApiError(result, "모임 수정에 실패했습니다."), "error");
                 return;
             }
