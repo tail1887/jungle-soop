@@ -818,7 +818,7 @@ function renderComments(container, items, meetingId, currentUserId, options) {
         if (currentUserId && String(item.author_id) === currentUserId) {
             html += `<button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(item.comment_id)}">삭제</button>`;
         }
-        if (!flatReplies) {
+        if (currentUserId) {
             html += `<button type="button" class="comment-reply-btn" data-comment-id="${escapeHtml(item.comment_id)}">답글</button>`;
         }
         html += "</div>";
