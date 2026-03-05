@@ -1,33 +1,65 @@
 import pytest
+
 from app.db import get_database
 from app.utils.security import hash_password
+
+
+@pytest.fixture(autouse=True)
+def clear_users(client):
+    db = get_database(client.application)
+    db.users.delete_many({})
+    yield
+    db.users.delete_many({})
+
 
 @pytest.mark.integration
 def test_login_success(client):
     email = "test@jungle.soop"
     password = "password1234"
-    
+
     db = get_database(client.application)
     hashed = hash_password(password)
-    user_data = {
+    db.users.insert_one(
+        {
         "email": email,
         "password_hash": hashed,
-        "nickname": "테스터"
-    }
+            "nickname": "테스터",
+        }
+    )
 
-    # 1. 의심되는 모든 컬렉션에서 기존 유저 삭제 및 새로 삽입
-    for col in ["user", "users", "member", "members"]:
-        db[col].delete_one({"email": email})
-        db[col].insert_one(user_data.copy())
-
-    # 2. 로그인 요청
-    response = client.post("/api/v1/auth/login", json={
-        "email": email,
-        "password": password
-    })
-    
-    # 3. 실패 시 서버가 DB에서 무엇을 조회했는지 print로 확인 (UserRepository 내부 로직 확인용)
-    if response.status_code != 200:
-        print(f"\n[실패 응답 데이터]: {response.get_json()}")
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
 
     assert response.status_code == 200
+    body = response.get_json()
+    assert body["success"] is True
+    assert body["data"]["nickname"] == "테스터"
+    assert body["data"]["access_token"]
+
+
+@pytest.mark.integration
+def test_login_fails_with_invalid_credentials(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "nouser@jungle.soop", "password": "wrong-password"},
+    )
+    assert response.status_code == 401
+    body = response.get_json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+@pytest.mark.integration
+def test_login_fails_with_missing_input(client):
+    response = client.post("/api/v1/auth/login", json={"email": "only-email@jungle.soop"})
+    assert response.status_code == 400
+    body = response.get_json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "INVALID_INPUT"
+
+
+@pytest.mark.integration
+def test_logout_success(client):
+    response = client.post("/api/v1/auth/logout")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["success"] is True

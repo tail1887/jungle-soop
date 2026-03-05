@@ -1,6 +1,7 @@
 from app.models.user_repository import UserRepository
 from app.utils.security import check_password, generate_token
 
+
 class AuthService:
     @staticmethod
     def signup(payload: dict) -> dict:
@@ -8,33 +9,48 @@ class AuthService:
 
     @staticmethod
     def login(payload: dict) -> dict:
-        email = payload.get('email')
-        password = payload.get('password')
+        email = (payload.get("email") or "").strip()
+        password = payload.get("password") or ""
+
+        if not email or not password:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "INVALID_INPUT",
+                        "message": "이메일과 비밀번호를 입력해주세요.",
+                    },
+                },
+            }
 
         user = UserRepository.find_by_email(email)
-        
-        if not user or not check_password(user['password_hash'], password):
+
+        if not user or not check_password(user["password_hash"], password):
             return {
                 "status_code": 401,
                 "body": {
                     "success": False,
-                    "error": {"code": "INVALID_INPUT", "message": "이메일 또는 비밀번호가 일치하지 않습니다."}
-                }
+                    "error": {
+                        "code": "INVALID_CREDENTIALS",
+                        "message": "이메일 또는 비밀번호가 일치하지 않습니다.",
+                    },
+                },
             }
 
-        access_token = generate_token(str(user['_id']))
+        access_token = generate_token(str(user["_id"]))
 
         return {
             "status_code": 200,
             "body": {
                 "success": True,
                 "data": {
-                    "user_id": str(user['_id']),
-                    "nickname": user['nickname'],
-                    "access_token": access_token
+                    "user_id": str(user["_id"]),
+                    "nickname": user.get("nickname", ""),
+                    "access_token": access_token,
                 },
-                "message": "로그인 성공"
-            }
+                "message": "로그인 성공",
+            },
         }
 
     @staticmethod
@@ -44,8 +60,8 @@ class AuthService:
             "body": {
                 "success": True,
                 "data": {},
-                "message": "로그아웃 완료"
-            }
+                "message": "로그아웃 완료",
+            },
         }
 
 def _not_implemented(code: str) -> dict:
