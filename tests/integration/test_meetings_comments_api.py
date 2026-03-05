@@ -115,6 +115,7 @@ def test_delete_comment_forbidden_if_not_author(client):
         headers=_auth_headers("user2-token"),
     )
     assert response.status_code == 403
+<<<<<<< feature/meeting-comments-replies-api
 
 
 @pytest.mark.integration
@@ -144,3 +145,5 @@ def test_create_reply_and_list_nested(client):
     assert "replies" in items[0]
     assert len(items[0]["replies"]) == 1
     assert items[0]["replies"][0]["body"] == "대댓글"
+=======
+>>>>>>> main
