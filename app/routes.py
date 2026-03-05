@@ -37,6 +37,10 @@ def register_routes(app: Flask) -> None:
     def profile_page():
         return render_template("profile.html")
 
+    @app.get("/users/<user_id>")
+    def user_profile_page(user_id: str):
+        return render_template("user_profile.html", user_id=user_id)
+
     @app.get("/health")
     def health():
         return jsonify({"status": "ok"})

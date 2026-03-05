@@ -102,3 +102,12 @@ def test_get_public_user_profile_api_requires_auth(client):
         assert body["error"]["code"] == "UNAUTHORIZED"
     finally:
         users.delete_one({"_id": user_doc["_id"]})
+
+
+@pytest.mark.integration
+def test_user_profile_page_route_renders(client):
+    resp = client.get("/users/test-user-id")
+    assert resp.status_code == 200
+    text = resp.get_data(as_text=True)
+    assert 'id="user-profile-root"' in text
+    assert "test-user-id" in text

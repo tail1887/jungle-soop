@@ -460,9 +460,7 @@ function renderMeetingParticipants(participants) {
 
         if (userId) {
             const anchor = document.createElement("a");
-            anchor.href = "#";
-            anchor.className = "js-user-profile";
-            anchor.dataset.userId = userId;
+            anchor.href = `/users/${encodeURIComponent(userId)}`;
             anchor.textContent = nickname;
             li.appendChild(anchor);
         } else {
