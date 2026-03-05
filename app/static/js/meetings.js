@@ -34,6 +34,34 @@ function formatApiError(result, fallbackMessage) {
     return result?.data?.error?.message || fallbackMessage;
 }
 
+function pickFirst(...values) {
+    for (const value of values) {
+        if (value !== undefined && value !== null && value !== "") {
+            return value;
+        }
+    }
+    return "";
+}
+
+function parseMeetingItems(resultData) {
+    return (
+        resultData?.data?.items
+        || resultData?.data?.meetings
+        || resultData?.meetings
+        || []
+    );
+}
+
+function readFormField(form, names) {
+    for (const name of names) {
+        const field = form.elements.namedItem(name);
+        if (field && "value" in field) {
+            return field.value;
+        }
+    }
+    return "";
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -51,10 +79,10 @@ function createMeetingListItem(meeting) {
     li.className = "meeting-item";
     const id = meeting.meeting_id || "unknown";
     const title = meeting.title || "제목 없음";
-    const place = meeting.place || "장소 미정";
-    const scheduledAt = meeting.scheduled_at || "일시 미정";
+    const place = pickFirst(meeting.place, meeting.location, "장소 미정");
+    const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
     const count = meeting.participant_count ?? 0;
-    const maxCapacity = meeting.max_capacity ?? "-";
+    const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
 
     li.innerHTML = `
@@ -87,7 +115,7 @@ async function loadMeetingsList() {
             return;
         }
 
-        const meetings = result.data?.data?.items || [];
+        const meetings = parseMeetingItems(result.data);
         if (meetings.length === 0) {
             setUiMessage(messageElement, "등록된 모임이 없습니다.", "");
             return;
@@ -115,17 +143,18 @@ function bindMeetingsListPage() {
 }
 
 function parseCreateFormPayload(form) {
+    const rawMaxCapacity = readFormField(form, ["max_capacity", "capacity"]);
     return {
-        title: form.title.value.trim(),
-        scheduled_at: form.scheduled_at.value,
-        place: form.place.value.trim(),
-        description: form.description.value.trim(),
-        max_capacity: Number(form.max_capacity.value),
+        title: readFormField(form, ["title"]).trim(),
+        scheduled_at: readFormField(form, ["scheduled_at", "datetime"]).trim(),
+        place: readFormField(form, ["place", "location"]).trim(),
+        description: readFormField(form, ["description"]).trim(),
+        max_capacity: Number(rawMaxCapacity),
     };
 }
 
 function validateCreateForm(payload) {
-    if (!payload.title || !payload.scheduled_at || !payload.place || !payload.max_capacity) {
+    if (!payload.title || !payload.scheduled_at || !payload.place || Number.isNaN(payload.max_capacity)) {
         return "제목, 일시, 장소, 모집 인원을 입력해주세요.";
     }
     if (payload.max_capacity < 2 || payload.max_capacity > 20) {
@@ -144,7 +173,13 @@ function bindMeetingCreatePage() {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const payload = parseCreateFormPayload(form);
+        let payload;
+        try {
+            payload = parseCreateFormPayload(form);
+        } catch (_error) {
+            setUiMessage(messageElement, "입력값을 읽는 중 오류가 발생했습니다. 페이지를 새로고침해주세요.", "error");
+            return;
+        }
         const validationMessage = validateCreateForm(payload);
         if (validationMessage) {
             setUiMessage(messageElement, validationMessage, "error");
@@ -197,10 +232,10 @@ function setMeetingDetail(meeting) {
     }
 
     titleEl.textContent = meeting.title || "제목 없음";
-    const place = meeting.place || "장소 미정";
-    const scheduledAt = meeting.scheduled_at || "일시 미정";
+    const place = pickFirst(meeting.place, meeting.location, "장소 미정");
+    const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
     const count = meeting.participant_count ?? 0;
-    const maxCapacity = meeting.max_capacity ?? "-";
+    const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
     metaEl.textContent = `${place} · ${scheduledAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
     descEl.textContent = meeting.description || "설명이 없습니다.";
@@ -292,8 +327,8 @@ async function loadMeetingDetail() {
         }
 
         const meeting = result.data?.data || {};
-        root.dataset.maxCapacity = String(meeting.max_capacity ?? "-");
-        root.dataset.metaPrefix = `${meeting.place || "장소 미정"} · ${meeting.scheduled_at || "일시 미정"}`;
+        root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
+        root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
         setMeetingDetail(meeting);
         setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
     } catch (_error) {
