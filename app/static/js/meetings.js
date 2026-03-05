@@ -806,6 +806,7 @@ function renderComments(container, items, meetingId, currentUserId, options) {
     const flatReplies = options && options.flatReplies;
     container.innerHTML = "";
     if (!items.length) {
+        container.appendChild(document.createTextNode("댓글이 없습니다."));
         return;
     }
     items.forEach((item) => {
