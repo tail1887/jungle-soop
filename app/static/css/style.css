@@ -89,6 +89,51 @@ button {
     margin-bottom: 12px;
 }
 
+.meeting-search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.meeting-search-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.meeting-search-row button {
+    padding: 8px 16px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.meeting-search-row button:hover {
+    background: #1d4ed8;
+}
+
+.meeting-toolbar-group {
+    display: flex;
+    gap: 6px;
+}
+
+.meeting-toolbar-group button {
+    padding: 8px 12px;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.meeting-toolbar-group button.is-active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
 .button-link {
     display: inline-flex;
     align-items: center;

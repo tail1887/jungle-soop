@@ -510,7 +510,8 @@ sequenceDiagram
 #### `GET /api/v1/meetings`
 
 - Query
-`status=open|closed&sort=latest|deadline&page=1&limit=10`
+`status=open|closed&sort=latest|deadline&order=asc|desc&page=1&limit=10&q=검색어`  
+  - `q`: 모임 제목 부분 검색(대소문자 무시). 생략 시 전체 목록 조회.
 - Success (`200`)
 
 ```json

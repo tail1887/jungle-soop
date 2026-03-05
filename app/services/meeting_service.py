@@ -1,4 +1,39 @@
 from app.models.meeting_repository import MeetingRepository
+import re
+
+
+def _parse_dt(value):
+    """Parse ISO datetime string or datetime to naive UTC for comparison."""
+    if value is None:
+        return None
+    from datetime import datetime, timezone
+    if hasattr(value, "timestamp"):
+        dt = value
+    else:
+        s = str(value).strip().replace("Z", "+00:00")
+        try:
+            dt = datetime.fromisoformat(s)
+        except (ValueError, TypeError):
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _validate_meeting_datetimes(scheduled_at, deadline_at):
+    """
+    Validate: both in future, deadline <= scheduled (미입력 시 deadline=scheduled 허용).
+    Returns (True, None) or (False, error_message).
+    """
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if scheduled_at <= now:
+        return False, "모임 일시는 현재 시간 이후로 설정해주세요."
+    if deadline_at is not None and deadline_at <= now:
+        return False, "마감 기한은 현재 시간 이후로 설정해주세요."
+    if deadline_at is not None and deadline_at > scheduled_at:
+        return False, "마감 기한은 모임 일시보다 이전이어야 합니다."
+    return True, None
 
 
 class MeetingService:
@@ -31,7 +66,33 @@ class MeetingService:
                 },
             }
 
-        from datetime import datetime
+        from datetime import datetime, timezone
+        scheduled_dt = _parse_dt(payload.get("scheduled_at"))
+        deadline_dt = _parse_dt(payload.get("deadline_at")) or scheduled_dt
+        if scheduled_dt is None:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": "모임 일시 형식이 올바르지 않습니다.",
+                    },
+                },
+            }
+        ok, err_msg = _validate_meeting_datetimes(scheduled_dt, deadline_dt)
+        if not ok:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": err_msg,
+                    },
+                },
+            }
+
         meeting_doc = payload.copy()
         meeting_doc.setdefault("description", "")
         meeting_doc["author_id"] = author_id
@@ -39,7 +100,7 @@ class MeetingService:
         meeting_doc["participants"] = [author_id]
         meeting_doc["deadline_at"] = meeting_doc.get("deadline_at") or meeting_doc["scheduled_at"]
         meeting_doc["status"] = "open"
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         meeting_doc["created_at"] = now
         meeting_doc["updated_at"] = now
 
@@ -116,9 +177,55 @@ class MeetingService:
                 },
             }
 
-        from datetime import datetime
+        if status == "open" and meeting.get("status") == "closed":
+            deadline_dt = _parse_dt(meeting.get("deadline_at") or meeting.get("scheduled_at"))
+            if deadline_dt is not None:
+                from datetime import datetime, timezone
+                now = datetime.now(timezone.utc).replace(tzinfo=None)
+                if now >= deadline_dt:
+                    return {
+                        "status_code": 400,
+                        "body": {
+                            "success": False,
+                            "error": {
+                                "code": "MEETING_INVALID_PAYLOAD",
+                                "message": "마감 일시가 지나 조기마감 취소할 수 없습니다.",
+                            },
+                        },
+                    }
 
-        update_doc["updated_at"] = datetime.utcnow()
+        from datetime import datetime, timezone
+        # Validate datetimes if any is being updated
+        if "scheduled_at" in update_doc or "deadline_at" in update_doc:
+            effective_scheduled = update_doc.get("scheduled_at") or meeting.get("scheduled_at")
+            effective_deadline = update_doc.get("deadline_at") or meeting.get("deadline_at") or effective_scheduled
+            scheduled_dt = _parse_dt(effective_scheduled)
+            deadline_dt = _parse_dt(effective_deadline) or scheduled_dt
+            if scheduled_dt is None:
+                return {
+                    "status_code": 400,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "MEETING_INVALID_PAYLOAD",
+                            "message": "모임 일시 형식이 올바르지 않습니다.",
+                        },
+                    },
+                }
+            ok, err_msg = _validate_meeting_datetimes(scheduled_dt, deadline_dt)
+            if not ok:
+                return {
+                    "status_code": 400,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "MEETING_INVALID_PAYLOAD",
+                            "message": err_msg,
+                        },
+                    },
+                }
+
+        update_doc["updated_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
         updated = MeetingRepository.update_by_id(meeting_id, update_doc)
         if not updated:
@@ -196,19 +303,29 @@ class MeetingService:
         if status in {"open", "closed"}:
             filter_query["status"] = status
 
+        search_q = (query.get("q") or query.get("search") or "").strip()
+        if search_q:
+            filter_query["title"] = {"$regex": re.escape(search_q), "$options": "i"}
+
         all_meetings = MeetingRepository.find_all(filter_query)
 
         sort = query.get("sort", "latest")
+        order = query.get("order", "desc" if sort == "latest" else "asc")
+        if order not in ("asc", "desc"):
+            order = "desc" if sort == "latest" else "asc"
+        reverse = order == "desc"
+
         if sort == "deadline":
             sorted_meetings = sorted(
                 all_meetings,
                 key=lambda item: str(item.get("deadline_at") or item.get("scheduled_at", "")),
+                reverse=reverse,
             )
         else:
             sorted_meetings = sorted(
                 all_meetings,
                 key=lambda item: str(item.get("_id", "")),
-                reverse=True,
+                reverse=reverse,
             )
 
         start_idx = (page - 1) * limit
@@ -493,7 +610,16 @@ def _serialize_meeting_summary(meeting: dict) -> dict:
 
 
 def _serialize_meeting_detail(meeting: dict) -> dict:
+    from app.models.user_repository import UserRepository
+
     participants = meeting.get("participants") or []
+    participant_list = []
+    for participant_id in participants:
+        pid_str = str(participant_id)
+        user = UserRepository.find_by_id(pid_str)
+        nickname = (user.get("nickname", pid_str) if user else pid_str) or pid_str
+        participant_list.append({"user_id": pid_str, "nickname": nickname})
+
     return {
         "meeting_id": str(meeting.get("_id", "")),
         "title": meeting.get("title", ""),
@@ -502,7 +628,7 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "scheduled_at": meeting.get("scheduled_at", ""),
         "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
         "participant_count": len(participants),
-        "participants": [str(participant_id) for participant_id in participants],
+        "participants": participant_list,
         "max_capacity": meeting.get("max_capacity"),
         "status": meeting.get("status", "open"),
         "author_id": str(meeting.get("author_id", "")),
