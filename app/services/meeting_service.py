@@ -466,6 +466,7 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),
         "participant_count": len(participants),
+        "participants": [str(participant_id) for participant_id in participants],
         "max_capacity": meeting.get("max_capacity"),
         "status": meeting.get("status", "open"),
         "author_id": str(meeting.get("author_id", "")),

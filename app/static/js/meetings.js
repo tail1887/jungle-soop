@@ -265,6 +265,28 @@ function setMeetingDetail(meeting) {
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
+function renderMeetingParticipants(participants) {
+    const listEl = document.getElementById("meeting-participants-list");
+    const emptyEl = document.getElementById("meeting-participants-empty");
+    if (!listEl || !emptyEl) {
+        return;
+    }
+
+    listEl.innerHTML = "";
+    const normalized = Array.isArray(participants) ? participants : [];
+    if (normalized.length === 0) {
+        emptyEl.textContent = "아직 참여자가 없습니다.";
+        return;
+    }
+
+    emptyEl.textContent = "";
+    normalized.forEach((participantId) => {
+        const li = document.createElement("li");
+        li.textContent = String(participantId);
+        listEl.appendChild(li);
+    });
+}
+
 function updateMeetingDetailCounters(detailData) {
     const root = document.getElementById("meeting-detail-root");
     const metaEl = document.getElementById("meeting-detail-meta");
@@ -342,6 +364,7 @@ function bindMeetingJoinActions(meetingId, messageElement) {
                 return;
             }
             updateMeetingDetailCounters(result.data?.data || {});
+            await loadMeetingDetail({ skipSuccessMessage: true });
             setUiMessage(messageElement, result.data?.message || "모임 참여가 완료되었습니다.", "success");
         } catch (_error) {
             setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
@@ -360,6 +383,7 @@ function bindMeetingJoinActions(meetingId, messageElement) {
                 return;
             }
             updateMeetingDetailCounters(result.data?.data || {});
+            await loadMeetingDetail({ skipSuccessMessage: true });
             setUiMessage(messageElement, result.data?.message || "모임 참여가 취소되었습니다.", "success");
         } catch (_error) {
             setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
@@ -369,7 +393,7 @@ function bindMeetingJoinActions(meetingId, messageElement) {
     });
 }
 
-async function loadMeetingDetail() {
+async function loadMeetingDetail(options) {
     const root = document.getElementById("meeting-detail-root");
     const messageElement = document.getElementById("meeting-detail-message");
     if (!root || !messageElement) {
@@ -392,8 +416,11 @@ async function loadMeetingDetail() {
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
         root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
         setMeetingDetail(meeting);
+        renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
-        setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
+        if (!options?.skipSuccessMessage) {
+            setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
+        }
     } catch (_error) {
         setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
     }
