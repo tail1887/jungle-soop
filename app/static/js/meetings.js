@@ -12,6 +12,7 @@ function setUiMessage(element, text, type) {
 }
 
 const ACCESS_TOKEN_KEY = "access_token";
+const DEFAULT_LIMIT = 10;
 
 function getCookieValue(name) {
     const target = `${name}=`;
@@ -29,6 +30,10 @@ function getAccessToken() {
     return localStorage.getItem(ACCESS_TOKEN_KEY) || getCookieValue(ACCESS_TOKEN_KEY);
 }
 
+function formatApiError(result, fallbackMessage) {
+    return result?.data?.error?.message || fallbackMessage;
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -41,45 +46,23 @@ async function fetchJson(url, options) {
     return { ok: response.ok, status: response.status, data };
 }
 
-function fallbackMeetings() {
-    return [
-        {
-            meeting_id: "sample-1",
-            title: "샘플 스터디 모임",
-            location: "기숙사 라운지",
-            datetime: "2026-03-10T19:30",
-            capacity: 4,
-            participant_count: 2,
-            description: "백엔드 구현 전 UI 테스트용 더미 데이터입니다.",
-        },
-        {
-            meeting_id: "sample-2",
-            title: "알고리즘 풀이 모임",
-            location: "세미나실 A",
-            datetime: "2026-03-11T20:00",
-            capacity: 6,
-            participant_count: 3,
-            description: "목록/상세 이동 상태를 점검하기 위한 샘플입니다.",
-        },
-    ];
-}
-
 function createMeetingListItem(meeting) {
     const li = document.createElement("li");
     li.className = "meeting-item";
-    const id = meeting.meeting_id || meeting._id || "unknown";
+    const id = meeting.meeting_id || "unknown";
     const title = meeting.title || "제목 없음";
-    const location = meeting.location || meeting.place || "장소 미정";
-    const datetime = meeting.datetime || meeting.time || "일시 미정";
+    const place = meeting.place || "장소 미정";
+    const scheduledAt = meeting.scheduled_at || "일시 미정";
     const count = meeting.participant_count ?? 0;
-    const capacity = meeting.capacity ?? "-";
+    const maxCapacity = meeting.max_capacity ?? "-";
+    const status = meeting.status || "open";
 
     li.innerHTML = `
         <a href="/meetings/${id}">
             <strong>${title}</strong>
         </a>
-        <p>${location} · ${datetime}</p>
-        <p>참여 ${count}/${capacity}</p>
+        <p>${place} · ${scheduledAt}</p>
+        <p>참여 ${count}/${maxCapacity} · 상태 ${status}</p>
     `;
     return li;
 }
@@ -93,38 +76,31 @@ async function loadMeetingsList() {
 
     setUiMessage(messageElement, "모임 목록을 불러오는 중...", "");
     listElement.innerHTML = "";
-    let meetings = [];
-
     try {
-        const result = await fetchJson("/api/v1/meetings");
+        const result = await fetchJson(`/api/v1/meetings?page=1&limit=${DEFAULT_LIMIT}&sort=latest`);
         if (!result.ok) {
-            meetings = fallbackMeetings();
             setUiMessage(
                 messageElement,
-                "API 미구현 상태여서 샘플 목록을 표시합니다.",
+                formatApiError(result, "모임 목록을 불러오지 못했습니다."),
                 "error"
             );
-        } else {
-            meetings = result.data?.data?.meetings || result.data?.meetings || [];
-            setUiMessage(messageElement, "모임 목록을 불러왔습니다.", "success");
+            return;
         }
+
+        const meetings = result.data?.data?.items || [];
+        if (meetings.length === 0) {
+            setUiMessage(messageElement, "등록된 모임이 없습니다.", "");
+            return;
+        }
+
+        meetings.forEach((meeting) => {
+            listElement.appendChild(createMeetingListItem(meeting));
+        });
+        const total = result.data?.data?.pagination?.total ?? meetings.length;
+        setUiMessage(messageElement, `모임 목록을 불러왔습니다. (총 ${total}건)`, "success");
     } catch (_error) {
-        meetings = fallbackMeetings();
-        setUiMessage(
-            messageElement,
-            "네트워크 오류로 샘플 목록을 표시합니다.",
-            "error"
-        );
+        setUiMessage(messageElement, "네트워크 오류로 목록을 불러오지 못했습니다.", "error");
     }
-
-    if (meetings.length === 0) {
-        setUiMessage(messageElement, "등록된 모임이 없습니다.", "");
-        return;
-    }
-
-    meetings.forEach((meeting) => {
-        listElement.appendChild(createMeetingListItem(meeting));
-    });
 }
 
 function bindMeetingsListPage() {
@@ -141,18 +117,18 @@ function bindMeetingsListPage() {
 function parseCreateFormPayload(form) {
     return {
         title: form.title.value.trim(),
-        datetime: form.datetime.value,
-        location: form.location.value.trim(),
+        scheduled_at: form.scheduled_at.value,
+        place: form.place.value.trim(),
         description: form.description.value.trim(),
-        capacity: Number(form.capacity.value),
+        max_capacity: Number(form.max_capacity.value),
     };
 }
 
 function validateCreateForm(payload) {
-    if (!payload.title || !payload.datetime || !payload.location || !payload.capacity) {
+    if (!payload.title || !payload.scheduled_at || !payload.place || !payload.max_capacity) {
         return "제목, 일시, 장소, 모집 인원을 입력해주세요.";
     }
-    if (payload.capacity < 2 || payload.capacity > 20) {
+    if (payload.max_capacity < 2 || payload.max_capacity > 20) {
         return "모집 인원은 2~20명 사이여야 합니다.";
     }
     return "";
@@ -192,10 +168,11 @@ function bindMeetingCreatePage() {
                     window.location.href = "/login";
                     return;
                 }
-                const msg =
-                    result.data?.error?.message ||
-                    "모임 생성 API가 아직 준비되지 않았습니다.";
-                setUiMessage(messageElement, msg, "error");
+                setUiMessage(
+                    messageElement,
+                    formatApiError(result, "모임 생성 요청이 실패했습니다."),
+                    "error"
+                );
                 return;
             }
 
@@ -220,12 +197,79 @@ function setMeetingDetail(meeting) {
     }
 
     titleEl.textContent = meeting.title || "제목 없음";
-    const location = meeting.location || meeting.place || "장소 미정";
-    const datetime = meeting.datetime || meeting.time || "일시 미정";
+    const place = meeting.place || "장소 미정";
+    const scheduledAt = meeting.scheduled_at || "일시 미정";
     const count = meeting.participant_count ?? 0;
-    const capacity = meeting.capacity ?? "-";
-    metaEl.textContent = `${location} · ${datetime} · 참여 ${count}/${capacity}`;
+    const maxCapacity = meeting.max_capacity ?? "-";
+    const status = meeting.status || "open";
+    metaEl.textContent = `${place} · ${scheduledAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}`;
     descEl.textContent = meeting.description || "설명이 없습니다.";
+}
+
+function updateMeetingDetailCounters(detailData) {
+    const root = document.getElementById("meeting-detail-root");
+    const metaEl = document.getElementById("meeting-detail-meta");
+    if (!root || !metaEl) {
+        return;
+    }
+    const baseMeta = root.dataset.metaPrefix || "정보";
+    const maxCapacity = root.dataset.maxCapacity || "-";
+    const participantCount = detailData.participant_count ?? 0;
+    const status = detailData.status || "open";
+    metaEl.textContent = `${baseMeta} · 참여 ${participantCount}/${maxCapacity} · 상태 ${status}`;
+}
+
+async function requestJoinAction(meetingId, method) {
+    return fetchJson(`/api/v1/meetings/${meetingId}/join`, { method });
+}
+
+function bindMeetingJoinActions(meetingId, messageElement) {
+    const joinButton = document.getElementById("meeting-join-button");
+    const cancelButton = document.getElementById("meeting-cancel-button");
+    if (!joinButton || !cancelButton) {
+        return;
+    }
+
+    const setActionBusy = (busy) => {
+        joinButton.disabled = busy;
+        cancelButton.disabled = busy;
+    };
+
+    joinButton.addEventListener("click", async () => {
+        setActionBusy(true);
+        setUiMessage(messageElement, "모임 참여 요청 중...", "");
+        try {
+            const result = await requestJoinAction(meetingId, "POST");
+            if (!result.ok) {
+                setUiMessage(messageElement, formatApiError(result, "모임 참여에 실패했습니다."), "error");
+                return;
+            }
+            updateMeetingDetailCounters(result.data?.data || {});
+            setUiMessage(messageElement, result.data?.message || "모임 참여가 완료되었습니다.", "success");
+        } catch (_error) {
+            setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
+        } finally {
+            setActionBusy(false);
+        }
+    });
+
+    cancelButton.addEventListener("click", async () => {
+        setActionBusy(true);
+        setUiMessage(messageElement, "모임 참여 취소 요청 중...", "");
+        try {
+            const result = await requestJoinAction(meetingId, "DELETE");
+            if (!result.ok) {
+                setUiMessage(messageElement, formatApiError(result, "모임 참여 취소에 실패했습니다."), "error");
+                return;
+            }
+            updateMeetingDetailCounters(result.data?.data || {});
+            setUiMessage(messageElement, result.data?.message || "모임 참여가 취소되었습니다.", "success");
+        } catch (_error) {
+            setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
+        } finally {
+            setActionBusy(false);
+        }
+    });
 }
 
 async function loadMeetingDetail() {
@@ -243,19 +287,13 @@ async function loadMeetingDetail() {
     try {
         const result = await fetchJson(`/api/v1/meetings/${meetingId}`);
         if (!result.ok) {
-            setMeetingDetail({
-                title: `샘플 모임 (${meetingId})`,
-                location: "API 미연동",
-                datetime: "미정",
-                capacity: 4,
-                participant_count: 1,
-                description: "상세 API 미구현 상태라 샘플 데이터를 표시합니다.",
-            });
-            setUiMessage(messageElement, "API 미구현 상태로 샘플 상세를 표시합니다.", "error");
+            setUiMessage(messageElement, formatApiError(result, "모임 상세를 불러오지 못했습니다."), "error");
             return;
         }
 
-        const meeting = result.data?.data || result.data || {};
+        const meeting = result.data?.data || {};
+        root.dataset.maxCapacity = String(meeting.max_capacity ?? "-");
+        root.dataset.metaPrefix = `${meeting.place || "장소 미정"} · ${meeting.scheduled_at || "일시 미정"}`;
         setMeetingDetail(meeting);
         setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
     } catch (_error) {
@@ -271,6 +309,11 @@ function bindMeetingDetailPage() {
     refreshButton.addEventListener("click", () => {
         loadMeetingDetail();
     });
+    const meetingId = document.getElementById("meeting-detail-root")?.dataset.meetingId;
+    const messageElement = document.getElementById("meeting-detail-message");
+    if (meetingId && messageElement) {
+        bindMeetingJoinActions(meetingId, messageElement);
+    }
     loadMeetingDetail();
 }
 
