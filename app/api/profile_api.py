@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, g, request
 from app.middleware.auth_guard import login_required
 from app.models.user_repository import UserRepository
+from app.models.meeting_repository import MeetingRepository
 
 # 프로필 관련 API 블루프린트
 profile_bp = Blueprint("profile_api", __name__, url_prefix="/api/v1/profile")
@@ -28,7 +29,7 @@ def get_my_profile():
     }), 200
 
 @profile_bp.route("/me", methods=["PATCH"])
-@login_required # 수정할 때도 당연히 로그인이 필요하겠죠?
+@login_required # 수정할 때도 당연히 로그인필요
 def update_my_profile():
     # 1. 클라이언트가 보낸 JSON 데이터 가져오기
     payload = request.get_json()
@@ -49,4 +50,97 @@ def update_my_profile():
         "success": True,
         "data": {"nickname": new_nickname},
         "message": "프로필 수정 성공!"
+    }), 200
+
+@profile_bp.route("/meetings/created", methods=["GET"])  
+@login_required  
+def get_created_meetings():
+    user_id = g.user_id
+    meetings = MeetingRepository.find_created_meetings_by_user(user_id)
+
+    def serialize_meeting(doc):
+        return {
+            "id": str(doc["_id"]),
+            "title": doc.get("title"),
+            "description": doc.get("description"),
+            "host_id": doc.get("host_id"),
+            "status": doc.get("status"),
+            "max_participants": doc.get("max_participants"),
+            "participants": doc.get("participants", []),
+            "starts_at": doc.get("starts_at"),
+            "ends_at": doc.get("ends_at"),
+        }
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "type": "created",
+            "meetings": [serialize_meeting(m) for m in meetings],
+        },
+        "message": "내가 만든 모임 목록 조회 성공",
+    }), 200
+
+
+@profile_bp.route("/meetings/joined/active", methods=["GET"])
+@login_required
+def get_joined_active_meetings():
+    """
+    내가 현재 참여 중인(진행 중인) 모임 목록 조회 API
+    GET /api/v1/profile/meetings/joined/active
+    """
+    user_id = g.user_id
+    meetings = MeetingRepository.find_joined_active_meetings_by_user(user_id)
+
+    def serialize_meeting(doc):
+        return {
+            "id": str(doc["_id"]),
+            "title": doc.get("title"),
+            "description": doc.get("description"),
+            "host_id": doc.get("host_id"),
+            "status": doc.get("status"),
+            "max_participants": doc.get("max_participants"),
+            "participants": doc.get("participants", []),
+            "starts_at": doc.get("starts_at"),
+            "ends_at": doc.get("ends_at"),
+        }
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "type": "joined_active",
+            "meetings": [serialize_meeting(m) for m in meetings],
+        },
+        "message": "내가 참여 중인 모임 목록 조회 성공",
+    }), 200
+
+@profile_bp.route("/meetings/joined/past", methods=["GET"])
+@login_required
+def get_joined_past_meetings():
+    """
+    내가 참여했던(종료/지난) 모임 목록 조회 API
+    GET /api/v1/profile/meetings/joined/past
+    """
+    user_id = g.user_id
+    meetings = MeetingRepository.find_joined_past_meetings_by_user(user_id)
+
+    def serialize_meeting(doc):
+        return {
+            "id": str(doc["_id"]),
+            "title": doc.get("title"),
+            "description": doc.get("description"),
+            "host_id": doc.get("host_id"),
+            "status": doc.get("status"),
+            "max_participants": doc.get("max_participants"),
+            "participants": doc.get("participants", []),
+            "starts_at": doc.get("starts_at"),
+            "ends_at": doc.get("ends_at"),
+        }
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "type": "joined_past",
+            "meetings": [serialize_meeting(m) for m in meetings],
+        },
+        "message": "내가 참여했던 모임 목록 조회 성공",
     }), 200
