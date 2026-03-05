@@ -31,6 +31,30 @@ function getAccessToken() {
     return localStorage.getItem(ACCESS_TOKEN_KEY) || getCookieValue(ACCESS_TOKEN_KEY);
 }
 
+function decodeJwtPayload(token) {
+    if (!token) {
+        return null;
+    }
+    const parts = token.split(".");
+    if (parts.length < 2) {
+        return null;
+    }
+    try {
+        const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+        const decoded = atob(padded);
+        return JSON.parse(decoded);
+    } catch (_error) {
+        return null;
+    }
+}
+
+function getCurrentUserId() {
+    const token = getAccessToken();
+    const payload = decodeJwtPayload(token);
+    return payload?.user_id ? String(payload.user_id) : "";
+}
+
 function formatApiError(result, fallbackMessage) {
     return result?.data?.error?.message || fallbackMessage;
 }
@@ -258,6 +282,44 @@ async function requestJoinAction(meetingId, method) {
     return fetchJson(`/api/v1/meetings/${meetingId}/join`, { method });
 }
 
+function bindOwnerActions(messageElement) {
+    const editButton = document.getElementById("meeting-edit-button");
+    const closeButton = document.getElementById("meeting-close-button");
+    if (editButton) {
+        editButton.addEventListener("click", () => {
+            setUiMessage(messageElement, "정보수정 기능은 다음 단계에서 연결됩니다.", "");
+        });
+    }
+    if (closeButton) {
+        closeButton.addEventListener("click", () => {
+            setUiMessage(messageElement, "조기마감 기능은 다음 단계에서 연결됩니다.", "");
+        });
+    }
+}
+
+function setButtonVisible(element, visible) {
+    if (!element) {
+        return;
+    }
+    element.style.display = visible ? "" : "none";
+}
+
+function applyDetailActionVisibility(meeting) {
+    const currentUserId = getCurrentUserId();
+    const authorId = String(meeting.author_id || "");
+    const isAuthor = Boolean(currentUserId) && currentUserId === authorId;
+
+    const editButton = document.getElementById("meeting-edit-button");
+    const closeButton = document.getElementById("meeting-close-button");
+    const joinButton = document.getElementById("meeting-join-button");
+    const cancelButton = document.getElementById("meeting-cancel-button");
+
+    setButtonVisible(editButton, isAuthor);
+    setButtonVisible(closeButton, isAuthor);
+    setButtonVisible(joinButton, !isAuthor);
+    setButtonVisible(cancelButton, !isAuthor);
+}
+
 function bindMeetingJoinActions(meetingId, messageElement) {
     const joinButton = document.getElementById("meeting-join-button");
     const cancelButton = document.getElementById("meeting-cancel-button");
@@ -330,6 +392,7 @@ async function loadMeetingDetail() {
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
         root.dataset.metaPrefix = `${pickFirst(meeting.place, meeting.location, "장소 미정")} · ${pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정")}`;
         setMeetingDetail(meeting);
+        applyDetailActionVisibility(meeting);
         setUiMessage(messageElement, "모임 상세를 불러왔습니다.", "success");
     } catch (_error) {
         setUiMessage(messageElement, "네트워크 오류가 발생했습니다.", "error");
@@ -347,6 +410,7 @@ function bindMeetingDetailPage() {
     const meetingId = document.getElementById("meeting-detail-root")?.dataset.meetingId;
     const messageElement = document.getElementById("meeting-detail-message");
     if (meetingId && messageElement) {
+        bindOwnerActions(messageElement);
         bindMeetingJoinActions(meetingId, messageElement);
     }
     loadMeetingDetail();
