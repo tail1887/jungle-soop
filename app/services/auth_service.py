@@ -2,7 +2,6 @@ from app.models.user_repository import UserRepository
 from app.utils.security import hash_password
 from app.utils.security import check_password, generate_token
 
-
 class AuthService:
     @staticmethod
     def signup(payload: dict) -> dict:
@@ -77,7 +76,6 @@ class AuthService:
             }
 
         user = UserRepository.find_by_email(email)
-
         if not user or not check_password(user["password_hash"], password):
             return {
                 "status_code": 401,
@@ -91,7 +89,6 @@ class AuthService:
             }
 
         access_token = generate_token(str(user["_id"]))
-
         return {
             "status_code": 200,
             "body": {

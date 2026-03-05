@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify, request
+
+from app.middleware.auth_guard import login_required
 from app.services.auth_service import AuthService
 
 auth_bp = Blueprint("auth_api", __name__, url_prefix="/api/v1/auth")
@@ -16,6 +18,7 @@ def login():
     return jsonify(result["body"]), result["status_code"]
 
 @auth_bp.post("/logout")
+@login_required
 def logout():
     result = AuthService.logout()
     return jsonify(result["body"]), result["status_code"]

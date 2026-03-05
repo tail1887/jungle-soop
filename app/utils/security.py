@@ -18,3 +18,12 @@ def generate_token(user_id: str, expires_in_hours: int = 1) -> str:
     }
     
     return jwt.encode(payload, current_app.config.get('SECRET_KEY', 'default-secret-key'), algorithm='HS256')
+
+def decode_token(token: str) -> dict:
+    try:
+        secret = current_app.config.get('SECRET_KEY', 'default-secret-key')
+        return jwt.decode(token, secret, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
