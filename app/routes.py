@@ -67,6 +67,7 @@ def register_routes(app: Flask) -> None:
                     "user_id": user["id"],
                     "email": user["email"],
                     "nickname": user["nickname"],
+                    "profile_image_url": user["profile_image_url"],
                 },
                 "message": "사용자 프로필 조회 성공",
             }
