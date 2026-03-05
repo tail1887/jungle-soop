@@ -867,7 +867,7 @@ function renderComments(container, items, meetingId, currentUserId, options) {
                 else wrap.appendChild(formWrap);
             });
         }
-        if (item.replies && item.replies.length > 0) {
+        if (!flatReplies && item.replies && item.replies.length > 0) {
             const repliesEl = document.createElement("div");
             repliesEl.className = "comment-replies";
             const flatList = flattenReplies(item.replies);
