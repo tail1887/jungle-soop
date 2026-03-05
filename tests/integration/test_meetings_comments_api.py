@@ -50,6 +50,8 @@ def test_create_comment_success(client):
     assert body["data"]["meeting_id"] == meeting_id
     assert "comment_id" in body["data"]
     assert "author_nickname" in body["data"]
+    assert body["data"]["author_meeting_role"] == "creator"
+    assert body["data"]["author_profile_image_url"]
 
 
 @pytest.mark.integration
@@ -75,6 +77,37 @@ def test_list_comments_success(client):
     texts = [it["body"] for it in body["data"]["items"]]
     assert "댓글1" in texts
     assert "댓글2" in texts
+    assert all("author_profile_image_url" in it for it in body["data"]["items"])
+    assert all(it["author_meeting_role"] == "creator" for it in body["data"]["items"])
+
+
+@pytest.mark.integration
+def test_comment_role_participant_and_non_participant(client):
+    meeting_id = _create_meeting(client)
+
+    # participant user joins first, then comments
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user2"
+    join_res = client.post(f"/api/v1/meetings/{meeting_id}/join", headers=_auth_headers("user2-token"))
+    assert join_res.status_code == 200
+    participant_comment_res = client.post(
+        f"/api/v1/meetings/{meeting_id}/comments",
+        json={"body": "참여자 댓글"},
+        headers=_auth_headers("user2-token"),
+    )
+    assert participant_comment_res.status_code == 201
+    assert participant_comment_res.get_json()["data"]["author_meeting_role"] == "participant"
+
+    # non participant user writes comment without joining
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user3"
+    outsider_comment_res = client.post(
+        f"/api/v1/meetings/{meeting_id}/comments",
+        json={"body": "미참여자 댓글"},
+        headers=_auth_headers("user3-token"),
+    )
+    assert outsider_comment_res.status_code == 201
+    assert outsider_comment_res.get_json()["data"]["author_meeting_role"] == "non_participant"
 
 
 @pytest.mark.integration
