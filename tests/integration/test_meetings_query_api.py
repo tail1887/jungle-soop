@@ -125,3 +125,25 @@ def test_get_meeting_detail_not_found(client):
     body = response.get_json()
     assert body["success"] is False
     assert body["error"]["code"] == "MEETING_NOT_FOUND"
+
+
+@pytest.mark.integration
+def test_list_meetings_filter_by_title_search(client):
+    _create_meeting(client, "user1", "저녁 같이 먹을 사람", "2030-03-05T18:30:00+09:00")
+    _create_meeting(client, "user2", "점심 런치 모임", "2030-03-04T18:30:00+09:00")
+    _create_meeting(client, "user3", "저녁 회의", "2030-03-03T18:30:00+09:00")
+
+    response = client.get("/api/v1/meetings?q=저녁")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["success"] is True
+    items = body["data"]["items"]
+    assert len(items) == 2
+    titles = [it["title"] for it in items]
+    assert "저녁 같이 먹을 사람" in titles
+    assert "저녁 회의" in titles
+    assert "점심 런치 모임" not in titles
+
+    response_empty = client.get("/api/v1/meetings?q=없는검색어")
+    assert response_empty.status_code == 200
+    assert len(response_empty.get_json()["data"]["items"]) == 0

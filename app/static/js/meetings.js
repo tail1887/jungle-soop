@@ -18,6 +18,8 @@ const DEFAULT_LIMIT = 10;
 let listSortState = { sort: "latest", order: "desc" };
 /** "open" | "closed" — 필터 버튼이 모집중이면 open, 마감됨이면 closed */
 let listFilterStatus = "open";
+/** 모임 제목 검색어 */
+let listSearchQuery = "";
 
 function getCookieValue(name) {
     const target = `${name}=`;
@@ -163,6 +165,8 @@ async function loadMeetingsList(opts) {
     listSortState = { sort, order };
     const statusFilter = opts?.status ?? listFilterStatus;
     listFilterStatus = statusFilter;
+    const searchQ = opts?.search ?? listSearchQuery;
+    listSearchQuery = searchQ;
 
     setUiMessage(messageElement, "모임 목록을 불러오는 중...", "");
     listElement.innerHTML = "";
@@ -174,6 +178,9 @@ async function loadMeetingsList(opts) {
             order,
             status: statusFilter,
         });
+        if (searchQ) {
+            params.set("q", searchQ);
+        }
         const result = await fetchJson(`/api/v1/meetings?${params}`);
         if (!result.ok) {
             setUiMessage(
@@ -186,7 +193,11 @@ async function loadMeetingsList(opts) {
 
         const meetings = parseMeetingItems(result.data);
         if (meetings.length === 0) {
-            setUiMessage(messageElement, "등록된 모임이 없습니다.", "");
+            setUiMessage(
+                messageElement,
+                searchQ ? "검색 결과가 없습니다." : "등록된 모임이 없습니다.",
+                ""
+            );
         } else {
             meetings.forEach((meeting) => {
                 listElement.appendChild(createMeetingListItem(meeting));
@@ -235,6 +246,25 @@ function bindMeetingsListPage() {
     if (sortBtn) {
         sortBtn.addEventListener("click", () => {
             listSortState.order = listSortState.order === "desc" ? "asc" : "desc";
+            loadMeetingsList();
+        });
+    }
+
+    const searchInput = document.getElementById("meetings-search-input");
+    const searchButton = document.getElementById("meetings-search-button");
+    if (searchInput) {
+        searchInput.value = listSearchQuery;
+        searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                listSearchQuery = searchInput.value.trim();
+                loadMeetingsList();
+            }
+        });
+    }
+    if (searchButton) {
+        searchButton.addEventListener("click", () => {
+            listSearchQuery = searchInput ? searchInput.value.trim() : "";
             loadMeetingsList();
         });
     }

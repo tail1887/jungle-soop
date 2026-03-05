@@ -1,4 +1,5 @@
 from app.models.meeting_repository import MeetingRepository
+import re
 
 
 def _parse_dt(value):
@@ -301,6 +302,10 @@ class MeetingService:
         status = query.get("status")
         if status in {"open", "closed"}:
             filter_query["status"] = status
+
+        search_q = (query.get("q") or query.get("search") or "").strip()
+        if search_q:
+            filter_query["title"] = {"$regex": re.escape(search_q), "$options": "i"}
 
         all_meetings = MeetingRepository.find_all(filter_query)
 
