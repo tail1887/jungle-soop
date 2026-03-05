@@ -221,6 +221,24 @@ button {
     color: #6b7280;
 }
 
+.meeting-participant-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.meeting-participant-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.meeting-participant-name {
+    font-size: 0.95rem;
+}
+
 .meeting-comments {
     margin-top: 16px;
 }

@@ -510,25 +510,27 @@ function renderMeetingParticipants(participants) {
     emptyEl.textContent = "";
     normalized.forEach((item) => {
         const li = document.createElement("li");
-
-        const userId =
-            item && typeof item === "object" && (item.user_id || item.id || item._id)
-                ? String(item.user_id || item.id || item._id)
-                : "";
-        const nickname =
+        li.className = "meeting-participant-item";
+        const userId = item && typeof item === "object" && item.user_id != null ? String(item.user_id) : String(item);
+        const displayName =
             item && typeof item === "object" && item.nickname != null
                 ? String(item.nickname)
-                : String(item);
-
+                : userId;
+        const avatarUrl = (item && typeof item === "object" && item.profile_image_url) ? String(item.profile_image_url) : "";
+        const img = document.createElement("img");
+        img.className = "meeting-participant-avatar";
+        img.src = avatarUrl || "https://api.dicebear.com/9.x/identicon/svg?seed=" + encodeURIComponent(displayName || userId);
+        img.alt = displayName + " 프로필";
+        img.width = 24;
+        img.height = 24;
+        const span = document.createElement(userId ? "a" : "span");
+        span.className = "meeting-participant-name";
+        span.textContent = displayName;
         if (userId) {
-            const anchor = document.createElement("a");
-            anchor.href = `/users/${encodeURIComponent(userId)}`;
-            anchor.textContent = nickname;
-            li.appendChild(anchor);
-        } else {
-            li.textContent = nickname;
+            span.href = `/users/${encodeURIComponent(userId)}`;
         }
-
+        li.appendChild(img);
+        li.appendChild(span);
         listEl.appendChild(li);
     });
 }

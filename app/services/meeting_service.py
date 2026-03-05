@@ -687,7 +687,8 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         pid_str = str(participant_id)
         user = UserRepository.find_by_id(pid_str)
         nickname = (user.get("nickname", pid_str) if user else pid_str) or pid_str
-        participant_list.append({"user_id": pid_str, "nickname": nickname})
+        profile_image_url = (user.get("profile_image_url") if user else "") or _default_avatar_url(pid_str, nickname)
+        participant_list.append({"user_id": pid_str, "nickname": nickname, "profile_image_url": profile_image_url})
 
     author_id = str(meeting.get("author_id", ""))
     author_user = UserRepository.find_by_id(author_id) if author_id else None
