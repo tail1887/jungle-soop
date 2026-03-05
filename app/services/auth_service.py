@@ -1,5 +1,5 @@
 from app.models.user_repository import UserRepository
-from app.utils.security import check_password, generate_token # 추가 임포트
+from app.utils.security import check_password, generate_token
 
 class AuthService:
     @staticmethod
@@ -8,23 +8,45 @@ class AuthService:
 
     @staticmethod
     def login(payload: dict) -> dict:
-        email = payload.get("email")
-        password = payload.get("password")
-        
+        email = (payload.get("email") or "").strip()
+        password = payload.get("password") or ""
+
+        if not email or not password:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "INVALID_INPUT",
+                        "message": "이메일과 비밀번호를 입력해주세요.",
+                    },
+                },
+            }
+
         user = UserRepository.find_by_email(email)
         if not user or not check_password(user["password_hash"], password):
             return {
                 "status_code": 401,
-                "body": {"success": False, "error": {"code": "INVALID_INPUT", "message": "로그인 정보 불일치"}}
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "INVALID_CREDENTIALS",
+                        "message": "로그인 정보 불일치",
+                    },
+                },
             }
-        
+
         token = generate_token(str(user["_id"]))
         return {
             "status_code": 200,
             "body": {
                 "success": True,
-                "data": {"access_token": token}
-            }
+                "data": {
+                    "user_id": str(user["_id"]),
+                    "nickname": user.get("nickname", ""),
+                    "access_token": token,
+                },
+            },
         }
 
     @staticmethod
@@ -39,6 +61,9 @@ def _not_implemented(code: str) -> dict:
         "status_code": 501,
         "body": {
             "success": False,
-            "error": {"code": code, "message": "아직 구현되지 않은 기능입니다."},
+            "error": {
+                "code": code,
+                "message": "아직 구현되지 않은 기능입니다.",
+            },
         },
     }
