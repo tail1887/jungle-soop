@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Jungle Soop | 프로필{% endblock %}
+{% block content %}
+<section class="card" id="profile-root">
+    <h2>내 프로필</h2>
+    <p id="profile-message" class="form-message" role="alert" aria-live="polite"></p>
+    <p class="helper-text">이메일: <strong id="profile-email">-</strong></p>
+    <form id="profile-edit-form" novalidate>
+        <label for="profile-nickname">닉네임</label>
+        <input id="profile-nickname" name="nickname" type="text" placeholder="닉네임 입력" required>
+        <button id="profile-save-button" type="submit">닉네임 저장</button>
+    </form>
+</section>
+
+<section class="card" id="profile-meetings-root">
+    <h2>내 모임</h2>
+    <div class="meeting-toolbar">
+        <button type="button" class="profile-tab-button" data-tab="created">내가 만든 모임</button>
+        <button type="button" class="profile-tab-button" data-tab="joined_active">참여 중인 모임</button>
+        <button type="button" class="profile-tab-button" data-tab="joined_past">참여했던 모임</button>
+    </div>
+    <p id="profile-meetings-message" class="form-message" role="alert" aria-live="polite"></p>
+    <ul id="profile-meetings-list" class="meeting-list"></ul>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

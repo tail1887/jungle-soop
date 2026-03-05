@@ -32,6 +32,10 @@ def register_routes(app: Flask) -> None:
     def meeting_edit(meeting_id: str):
         return render_template("meeting_edit.html", meeting_id=meeting_id)
 
+    @app.get("/profile")
+    def profile_page():
+        return render_template("profile.html")
+
     @app.get("/health")
     def health():
         return jsonify({"status": "ok"})
