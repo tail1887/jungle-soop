@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Jungle Soop | 사용자 프로필{% endblock %}
+{% block content %}
+<section class="card" id="user-profile-root" data-user-id="{{ user_id }}">
+    <h2>사용자 프로필</h2>
+    <p id="user-profile-message" class="form-message" role="alert" aria-live="polite"></p>
+    <p class="helper-text">닉네임: <strong id="user-profile-nickname">-</strong></p>
+    <p class="helper-text">이메일: <strong id="user-profile-email">-</strong></p>
+    <div class="meeting-toolbar">
+        <a class="button-link" href="{{ url_for('meeting_list') }}">모임 목록으로</a>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/user_profile_page.js') }}"></script>
+{% endblock %}

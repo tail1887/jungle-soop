@@ -523,9 +523,12 @@ function renderMeetingParticipants(participants) {
         img.alt = displayName + " 프로필";
         img.width = 24;
         img.height = 24;
-        const span = document.createElement("span");
+        const span = document.createElement(userId ? "a" : "span");
         span.className = "meeting-participant-name";
         span.textContent = displayName;
+        if (userId) {
+            span.href = `/users/${encodeURIComponent(userId)}`;
+        }
         li.appendChild(img);
         li.appendChild(span);
         listEl.appendChild(li);
