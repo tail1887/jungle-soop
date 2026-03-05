@@ -52,6 +52,19 @@ function formatApiError(result, fallbackMessage) {
     return result?.data?.error?.message || fallbackMessage;
 }
 
+/** ISO 일시를 "YYYY-MM-DD HH:mm" 형태로 표시 (모임 목록과 동일) */
+function formatDateTimeForDisplay(value, fallback = "일시 미정") {
+    if (!value) {
+        return fallback;
+    }
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) {
+        const normalized = String(value).replace("T", " ");
+        return normalized.length >= 16 ? normalized.slice(0, 16) : normalized;
+    }
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+}
+
 function ensureProfileAvatarUi() {
     const root = document.getElementById("profile-root");
     if (!root) {
@@ -88,17 +101,19 @@ function createMeetingListItem(meeting) {
     const meetingId = meeting.meeting_id || "unknown";
     const title = meeting.title || "제목 없음";
     const place = meeting.place || "장소 미정";
-    const scheduledAt = meeting.scheduled_at || "일시 미정";
+    const scheduledAtRaw = meeting.scheduled_at || meeting.datetime || meeting.time || "";
+    const scheduledAt = formatDateTimeForDisplay(scheduledAtRaw);
     const count = meeting.participant_count ?? 0;
     const maxCapacity = meeting.max_capacity ?? "-";
     const status = meeting.status || "open";
+    const statusLabel = status === "closed" ? "마감됨" : "모집중";
 
     li.innerHTML = `
         <a href="/meetings/${meetingId}">
             <strong>${title}</strong>
         </a>
         <p>${place} · ${scheduledAt}</p>
-        <p>참여 ${count}/${maxCapacity} · 상태 ${status}</p>
+        <p>참여 ${count}/${maxCapacity} · 상태 ${statusLabel}</p>
     `;
     return li;
 }
