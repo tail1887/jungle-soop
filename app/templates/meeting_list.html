@@ -12,6 +12,10 @@
         <button id="meetings-refresh-button" type="button">새로고침</button>
         <a class="button-link" href="{{ url_for('meeting_new') }}">모임 만들기</a>
     </div>
+    <div id="meetings-search-row" class="meeting-search-row">
+        <input id="meetings-search-input" type="text" placeholder="모임 제목 검색" aria-label="모임 제목 검색" />
+        <button id="meetings-search-button" type="button">검색</button>
+    </div>
     <p id="meetings-list-message" class="form-message" role="alert" aria-live="polite"></p>
     <ul id="meetings-list" class="meeting-list"></ul>
 </section>
