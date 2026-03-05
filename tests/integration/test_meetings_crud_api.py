@@ -42,6 +42,44 @@ def test_create_meeting_success(client):
 
 
 @pytest.mark.integration
+def test_create_meeting_with_category(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+
+    payload = {
+        "title": "스터디 모임",
+        "place": "도서관",
+        "scheduled_at": "2026-12-10T14:00:00+09:00",
+        "max_capacity": 6,
+        "category": "study",
+    }
+    response = client.post("/api/v1/meetings", json=payload, headers=_auth_headers())
+    assert response.status_code == 201
+    meeting_id = response.get_json()["data"]["meeting_id"]
+
+    detail = client.get(f"/api/v1/meetings/{meeting_id}").get_json()
+    assert detail["success"] is True
+    assert detail["data"]["category"] == "study"
+
+
+@pytest.mark.integration
+def test_create_meeting_invalid_category(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = "user1"
+
+    payload = {
+        "title": "모임",
+        "place": "장소",
+        "scheduled_at": "2026-12-10T14:00:00+09:00",
+        "max_capacity": 4,
+        "category": "invalid",
+    }
+    response = client.post("/api/v1/meetings", json=payload, headers=_auth_headers())
+    assert response.status_code == 400
+    assert "카테고리" in response.get_json().get("error", {}).get("message", "")
+
+
+@pytest.mark.integration
 def test_update_meeting_success(client):
     with client.session_transaction() as sess:
         sess["user_id"] = "user1"
@@ -55,7 +93,7 @@ def test_update_meeting_success(client):
     create_res = client.post("/api/v1/meetings", json=payload, headers=_auth_headers())
     meeting_id = create_res.get_json()["data"]["meeting_id"]
 
-    patch_payload = {"title": "모임 제목(수정)", "scheduled_at": "2026-04-01T13:00:00+09:00"}
+    patch_payload = {"title": "모임 제목(수정)", "scheduled_at": "2026-04-01T13:00:00+09:00", "category": "exercise"}
     response = client.patch(
         f"/api/v1/meetings/{meeting_id}",
         json=patch_payload,

@@ -1,4 +1,5 @@
 from app.models.meeting_repository import MeetingRepository
+from app.constants import MEETING_CATEGORIES, CATEGORY_LABELS
 import re
 
 
@@ -95,6 +96,19 @@ class MeetingService:
 
         meeting_doc = payload.copy()
         meeting_doc.setdefault("description", "")
+        category = (payload.get("category") or "other").strip()
+        if category not in MEETING_CATEGORIES:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": f"카테고리는 {', '.join(MEETING_CATEGORIES)} 중 하나여야 합니다.",
+                    },
+                },
+            }
+        meeting_doc["category"] = category
         meeting_doc["author_id"] = author_id
         # The meeting author is considered an initial participant.
         meeting_doc["participants"] = [author_id]
@@ -150,6 +164,7 @@ class MeetingService:
             "deadline_at",
             "max_capacity",
             "status",
+            "category",
         }
         update_doc = {k: v for k, v in payload.items() if k in allowed}
         if not update_doc:
@@ -160,6 +175,19 @@ class MeetingService:
                     "error": {
                         "code": "MEETING_INVALID_PAYLOAD",
                         "message": "수정할 필드가 없습니다.",
+                    },
+                },
+            }
+
+        category = update_doc.get("category")
+        if category is not None and category not in MEETING_CATEGORIES:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": f"카테고리는 {', '.join(MEETING_CATEGORIES)} 중 하나여야 합니다.",
                     },
                 },
             }
@@ -600,6 +628,7 @@ def _serialize_meeting_summary(meeting: dict) -> dict:
     return {
         "meeting_id": str(meeting.get("_id", "")),
         "title": meeting.get("title", ""),
+        "category": meeting.get("category", "other"),
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),
         "deadline_at": meeting.get("deadline_at") or meeting.get("scheduled_at", ""),
@@ -623,6 +652,7 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
     return {
         "meeting_id": str(meeting.get("_id", "")),
         "title": meeting.get("title", ""),
+        "category": meeting.get("category", "other"),
         "description": meeting.get("description", ""),
         "place": meeting.get("place", ""),
         "scheduled_at": meeting.get("scheduled_at", ""),

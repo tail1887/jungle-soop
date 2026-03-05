@@ -7,6 +7,13 @@
     <form id="meeting-create-form" novalidate>
         <label for="title">제목</label>
         <input id="title" name="title" type="text" placeholder="모임 제목" required>
+        <label for="category">카테고리</label>
+        <select id="category" name="category" required>
+            <option value="meal">식사</option>
+            <option value="exercise">운동</option>
+            <option value="study">스터디</option>
+            <option value="other" selected>기타</option>
+        </select>
         <label for="scheduled_at">일시</label>
         <input id="scheduled_at" name="scheduled_at" type="datetime-local" required>
         <label for="deadline_at">마감 기한</label>

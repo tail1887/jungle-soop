@@ -522,6 +522,7 @@ sequenceDiagram
       {
         "meeting_id": "65e5f4c3b321a8c120f11a55",
         "title": "저녁 같이 먹을 사람",
+        "category": "meal",
         "place": "기숙사 정문",
         "scheduled_at": "2026-03-05T18:30:00+09:00",
         "deadline_at": "2026-03-05T17:30:00+09:00",
@@ -551,6 +552,7 @@ sequenceDiagram
   "data": {
     "meeting_id": "65e5f4c3b321a8c120f11a55",
     "title": "저녁 같이 먹을 사람",
+    "category": "meal",
     "description": "분식집 가실 분 구해요.",
     "place": "기숙사 정문",
     "scheduled_at": "2026-03-05T18:30:00+09:00",
@@ -576,9 +578,12 @@ sequenceDiagram
   "place": "기숙사 정문",
   "scheduled_at": "2026-03-05T18:30:00+09:00",
   "deadline_at": "2026-03-05T17:30:00+09:00",
-  "max_capacity": 4
+  "max_capacity": 4,
+  "category": "meal"
 }
 ```
+
+- `category`: 선택. `meal`(식사) | `exercise`(운동) | `study`(스터디) | `other`(기타). 미제출 시 `other`.
 
 - Success (`201`)
 
@@ -599,9 +604,12 @@ sequenceDiagram
   "title": "저녁 같이 먹을 사람 (시간 변경)",
   "scheduled_at": "2026-03-05T19:00:00+09:00",
   "deadline_at": "2026-03-05T18:00:00+09:00",
-  "status": "closed"
+  "status": "closed",
+  "category": "exercise"
 }
 ```
+
+- `category`: 선택. `meal` | `exercise` | `study` | `other`.
 
 - Success (`200`)
 
