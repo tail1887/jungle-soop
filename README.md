@@ -1137,6 +1137,14 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [ ] feat: 참여/취소 후 UI 즉시 반영
 - [ ] test: 비동기 동작 검증
 
+#### 🌿 Branch: `feature/profile-page` (프로필)
+- [ ] feat: 마이페이지 - 내 정보 조회 (`GET /api/v1/profile/me`)
+- [ ] feat: 마이페이지 - 내 정보 수정 (`PATCH /api/v1/profile/me`)
+- [ ] feat: 내가 만든 모임 목록 조회
+- [ ] feat: 내가 현재 참여 중인 모임 목록 조회
+- [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회
+- [ ] test: 프로필 조회/수정/모임 탭(3종) 시나리오 테스트
+
 #### ⚙️ Branch: `feature/deploy-ec2` (배포)
 - [ ] feat: 단일 EC2 서버 배포 스크립트/절차 작성
 - [ ] feat: Docker 기반 배포 검증
