@@ -102,6 +102,17 @@ function toDatetimeLocalValue(value) {
     return normalized;
 }
 
+/** Returns current local time as YYYY-MM-DDTHH:mm for datetime-local min attribute (현재 시간 이후만 허용). */
+function getDatetimeLocalMin() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const h = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${y}-${m}-${day}T${h}:${min}`;
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -253,10 +264,20 @@ function validateCreateForm(payload) {
     if (payload.max_capacity < 2 || payload.max_capacity > 20) {
         return "모집 인원은 2~20명 사이여야 합니다.";
     }
+    const now = Date.now();
     const scheduledAtTs = Date.parse(payload.scheduled_at);
-    const deadlineAtTs = Date.parse(payload.deadline_at);
-    if (!Number.isNaN(scheduledAtTs) && !Number.isNaN(deadlineAtTs) && deadlineAtTs > scheduledAtTs) {
-        return "마감 기한은 모임 일시보다 늦을 수 없습니다.";
+    const deadlineAtTs = Date.parse(payload.deadline_at) || scheduledAtTs;
+    if (Number.isNaN(scheduledAtTs)) {
+        return "모임 일시 형식이 올바르지 않습니다.";
+    }
+    if (scheduledAtTs <= now) {
+        return "모임 일시는 현재 시간 이후로 설정해주세요.";
+    }
+    if (!Number.isNaN(deadlineAtTs) && deadlineAtTs <= now) {
+        return "마감 기한은 현재 시간 이후로 설정해주세요.";
+    }
+    if (!Number.isNaN(deadlineAtTs) && deadlineAtTs >= scheduledAtTs) {
+        return "마감 기한은 모임 일시보다 이전이어야 합니다.";
     }
     return "";
 }
@@ -267,6 +288,22 @@ function bindMeetingCreatePage() {
     const submitButton = document.getElementById("meeting-create-submit-button");
     if (!form || !messageElement) {
         return;
+    }
+
+    const scheduledInput = form.elements.namedItem("scheduled_at");
+    const deadlineInput = form.elements.namedItem("deadline_at");
+    if (scheduledInput) {
+        scheduledInput.min = getDatetimeLocalMin();
+    }
+    if (deadlineInput) {
+        deadlineInput.min = getDatetimeLocalMin();
+        scheduledInput.addEventListener("change", function () {
+            if (scheduledInput.value) {
+                deadlineInput.max = scheduledInput.value;
+            } else {
+                deadlineInput.removeAttribute("max");
+            }
+        });
     }
 
     form.addEventListener("submit", async (event) => {
@@ -559,7 +596,25 @@ function bindMeetingEditPage() {
         if (placeField && "value" in placeField) placeField.value = meeting.place || "";
         if (descriptionField && "value" in descriptionField) descriptionField.value = meeting.description || "";
         if (maxCapacityField && "value" in maxCapacityField) maxCapacityField.value = String(meeting.max_capacity || 4);
+        const minVal = getDatetimeLocalMin();
+        if (scheduledAtField) scheduledAtField.min = minVal;
+        if (deadlineAtField) {
+            deadlineAtField.min = minVal;
+            if (scheduledAtField && scheduledAtField.value) deadlineAtField.max = scheduledAtField.value;
+        }
     };
+
+    const scheduledInput = form.elements.namedItem("scheduled_at");
+    const deadlineInput = form.elements.namedItem("deadline_at");
+    if (scheduledInput && deadlineInput) {
+        scheduledInput.addEventListener("change", function () {
+            if (scheduledInput.value) {
+                deadlineInput.max = scheduledInput.value;
+            } else {
+                deadlineInput.removeAttribute("max");
+            }
+        });
+    }
 
     const loadForEdit = async () => {
         setUiMessage(messageElement, "수정할 모임 정보를 불러오는 중...", "");

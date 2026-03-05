@@ -1,6 +1,40 @@
 from app.models.meeting_repository import MeetingRepository
 
 
+def _parse_dt(value):
+    """Parse ISO datetime string or datetime to naive UTC for comparison."""
+    if value is None:
+        return None
+    from datetime import datetime, timezone
+    if hasattr(value, "timestamp"):
+        dt = value
+    else:
+        s = str(value).strip().replace("Z", "+00:00")
+        try:
+            dt = datetime.fromisoformat(s)
+        except (ValueError, TypeError):
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _validate_meeting_datetimes(scheduled_at, deadline_at):
+    """
+    Validate: both in future, deadline <= scheduled (미입력 시 deadline=scheduled 허용).
+    Returns (True, None) or (False, error_message).
+    """
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if scheduled_at <= now:
+        return False, "모임 일시는 현재 시간 이후로 설정해주세요."
+    if deadline_at is not None and deadline_at <= now:
+        return False, "마감 기한은 현재 시간 이후로 설정해주세요."
+    if deadline_at is not None and deadline_at > scheduled_at:
+        return False, "마감 기한은 모임 일시보다 이전이어야 합니다."
+    return True, None
+
+
 class MeetingService:
     @staticmethod
     def create(payload: dict) -> dict:
@@ -31,7 +65,33 @@ class MeetingService:
                 },
             }
 
-        from datetime import datetime
+        from datetime import datetime, timezone
+        scheduled_dt = _parse_dt(payload.get("scheduled_at"))
+        deadline_dt = _parse_dt(payload.get("deadline_at")) or scheduled_dt
+        if scheduled_dt is None:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": "모임 일시 형식이 올바르지 않습니다.",
+                    },
+                },
+            }
+        ok, err_msg = _validate_meeting_datetimes(scheduled_dt, deadline_dt)
+        if not ok:
+            return {
+                "status_code": 400,
+                "body": {
+                    "success": False,
+                    "error": {
+                        "code": "MEETING_INVALID_PAYLOAD",
+                        "message": err_msg,
+                    },
+                },
+            }
+
         meeting_doc = payload.copy()
         meeting_doc.setdefault("description", "")
         meeting_doc["author_id"] = author_id
@@ -39,7 +99,7 @@ class MeetingService:
         meeting_doc["participants"] = [author_id]
         meeting_doc["deadline_at"] = meeting_doc.get("deadline_at") or meeting_doc["scheduled_at"]
         meeting_doc["status"] = "open"
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         meeting_doc["created_at"] = now
         meeting_doc["updated_at"] = now
 
@@ -116,9 +176,38 @@ class MeetingService:
                 },
             }
 
-        from datetime import datetime
+        from datetime import datetime, timezone
+        # Validate datetimes if any is being updated
+        if "scheduled_at" in update_doc or "deadline_at" in update_doc:
+            effective_scheduled = update_doc.get("scheduled_at") or meeting.get("scheduled_at")
+            effective_deadline = update_doc.get("deadline_at") or meeting.get("deadline_at") or effective_scheduled
+            scheduled_dt = _parse_dt(effective_scheduled)
+            deadline_dt = _parse_dt(effective_deadline) or scheduled_dt
+            if scheduled_dt is None:
+                return {
+                    "status_code": 400,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "MEETING_INVALID_PAYLOAD",
+                            "message": "모임 일시 형식이 올바르지 않습니다.",
+                        },
+                    },
+                }
+            ok, err_msg = _validate_meeting_datetimes(scheduled_dt, deadline_dt)
+            if not ok:
+                return {
+                    "status_code": 400,
+                    "body": {
+                        "success": False,
+                        "error": {
+                            "code": "MEETING_INVALID_PAYLOAD",
+                            "message": err_msg,
+                        },
+                    },
+                }
 
-        update_doc["updated_at"] = datetime.utcnow()
+        update_doc["updated_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
         updated = MeetingRepository.update_by_id(meeting_id, update_doc)
         if not updated:
