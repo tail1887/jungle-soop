@@ -677,6 +677,8 @@ sequenceDiagram
 - API 변경 시 같은 PR에서 `README.md`의 API 섹션을 같이 수정합니다.
 - breaking change(필드명 변경/삭제, 응답 구조 변경)는 합의 후 반영합니다.
 - 프론트 Mock 데이터도 본 문서 스키마와 동일하게 유지합니다.
+- `main` 브랜치는 직접 push 하지 않고 PR 머지로만 반영합니다.
+- `main` 머지 전 `test` 체크 통과를 필수로 유지합니다(브랜치 보호 규칙).
 
 ## 5. Database Schema (데이터베이스 스키마)
 
@@ -1081,15 +1083,17 @@ docker compose -f docker/docker-compose.test.yml down -v
 
 #### ⚙️ Branch: `feature/ci-github-actions` (CI / 초기 세팅 우선)
 - [x] feat: GitHub Actions CI workflow 작성
-- [x] feat: PR/push 시 자동 테스트 실행
+- [x] feat: PR 기준 자동 테스트 실행
 - [x] feat: `main` 머지 시 EC2 자동 배포 workflow 작성
 - [x] docs: CI 파이프라인 문서 반영
 
   - **CI**: `.github/workflows/ci.yml`
-    - PR / `main` push 시 `pytest` + `docker-compose.test` 실행
+    - `pull_request` 시 `pytest` + `docker-compose.test` 실행
+    - `workflow_dispatch`로 수동 CI 실행 가능
   - **CD**: `.github/workflows/deploy.yml`
     - `main` push 시 EC2 SSH 접속 후 배포 자동화
     - `workflow_dispatch`로 수동 배포 가능
+    - deployment concurrency 적용(중복 배포 방지)
   - **배포 스크립트**: `scripts/deploy.sh`
     - 서버에서 레포를 `origin/main` 기준으로 강제 동기화 후 `docker compose up -d --build` 실행
     - Docker/Compose 미설치 시 서버에서 자동 설치 후 배포 진행
@@ -1135,15 +1139,15 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] test: 모임 CRUD API 테스트
 
 #### 🌿 Branch: `feature/meetings-query` (모임 조회)
-- [ ] feat: 백엔드 - `GET /api/v1/meetings` 구현 (필터/정렬/페이지네이션)
-- [ ] feat: 백엔드 - `GET /api/v1/meetings/{meeting_id}` 구현
-- [ ] test: 목록/상세 조회 테스트
+- [x] feat: 백엔드 - `GET /api/v1/meetings` 구현 (필터/정렬/페이지네이션)
+- [x] feat: 백엔드 - `GET /api/v1/meetings/{meeting_id}` 구현
+- [x] test: 목록/상세 조회 테스트
 
 #### 🌿 Branch: `feature/meetings-join` (모임 참여/취소)
-- [ ] feat: 백엔드 - `POST /api/v1/meetings/{meeting_id}/join` 구현
-- [ ] feat: 백엔드 - `DELETE /api/v1/meetings/{meeting_id}/join` 구현
-- [ ] fix: 중복 참여/정원 초과 방지 로직 적용
-- [ ] test: 참여/취소/충돌(409) 테스트
+- [x] feat: 백엔드 - `POST /api/v1/meetings/{meeting_id}/join` 구현
+- [x] feat: 백엔드 - `DELETE /api/v1/meetings/{meeting_id}/join` 구현
+- [x] fix: 중복 참여/정원 초과 방지 로직 적용
+- [x] test: 참여/취소/충돌(409) 테스트
 
 #### 🎨 Branch: `feature/ui-auth-pages` (인증 화면 연동)
 - [x] feat: 로그인/회원가입 페이지 작성
@@ -1156,9 +1160,9 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] test: 화면별 주요 시나리오 점검
 
 #### 🎨 Branch: `feature/ui-ajax-interaction` (AJAX 상호작용)
-- [ ] feat: 새로고침 없는 목록 갱신 처리
-- [ ] feat: 참여/취소 후 UI 즉시 반영
-- [ ] test: 비동기 동작 검증
+- [x] feat: 새로고침 없는 목록 갱신 처리
+- [x] feat: 참여/취소 후 UI 즉시 반영
+- [x] test: 비동기 동작 검증
 
 #### 🎨 Branch: `feature/ui-jwt-token-flow` (프론트 JWT 토큰 흐름)
 - [x] feat: 로그인 성공 시 토큰 저장(localStorage/cookie) 처리
@@ -1167,22 +1171,30 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] test: 로그인 유지/로그아웃/401 리다이렉트 수동 시나리오 점검
 
 #### 🌿 Branch: `feature/profile-api` (프로필 정보 API)
-- [ ] feat: `GET /api/v1/profile/me` 구현 (내 정보 조회)
-- [ ] feat: `PATCH /api/v1/profile/me` 구현 (내 정보 수정)
-- [ ] test: 프로필 조회/수정 API 테스트
-- [ ] test: 프로필 수정 후 재조회 일관성 테스트
+- [x] feat: `GET /api/v1/profile/me` 구현 (내 정보 조회)
+- [x] feat: `PATCH /api/v1/profile/me` 구현 (내 정보 수정)
+- [x] test: 프로필 조회/수정 API 테스트
+- [x] test: 프로필 수정 후 재조회 일관성 테스트
 
 #### 🌿 Branch: `feature/profile-meetings-query` (프로필 모임 조회 API)
-- [ ] feat: 내가 만든 모임 목록 조회 API
-- [ ] feat: 내가 현재 참여 중인 모임 목록 조회 API
-- [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
-- [ ] test: 모임 유형(created/joined_active/joined_past)별 조회 테스트
-- [ ] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
+- [x] feat: 내가 만든 모임 목록 조회 API
+- [x] feat: 내가 현재 참여 중인 모임 목록 조회 API
+- [x] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
+- [x] test: 모임 유형(created/joined_active/joined_past)별 조회 테스트
+- [x] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
 
 #### 🎨 Branch: `feature/profile-ui` (프로필 화면 연동)
-- [ ] feat: 프로필 페이지 UI(내 정보 카드 + 수정 폼) 구현
-- [ ] feat: 모임 탭 UI(만든 모임/참여 중/참여했던 모임) 구현
-- [ ] test: 프로필 화면 주요 시나리오 수동 테스트
+- [x] feat: 프로필 페이지 UI(내 정보 카드 + 수정 폼) 구현
+- [x] feat: 모임 탭 UI(만든 모임/참여 중/참여했던 모임) 구현
+- [x] test: 프로필 화면 주요 시나리오 수동 테스트
+
+#### 🚀 Next Expansion Plan (팀 합의안)
+- [ ] 1) 프로필 이미지 업로드/표시 + 미등록 시 기본 아바타(결정적 더미) 적용
+- [ ] 2) 타인 프로필 조회 (`/profile/{user_id}`) + 공개 범위 기본 정책(이메일 비공개)
+- [ ] 3) 모임 상세 전용 게시글 시스템(작성/조회 권한: 작성자+참여자)
+- [ ] 4) Tailwind 기반 UI 리뉴얼(기능 확장 후 화면 단위로 점진 전환)
+- [ ] 5) 개발 문서 최종 정리 (API/스키마/운영 규칙 동기화)
+- [ ] 6) 발표자료(PPT) 정리 및 데모 시나리오 확정
 
 #### ⚙️ Branch: `feature/deploy-ec2` (배포)
 - [ ] feat: 단일 EC2 서버 배포 스크립트/절차 작성
@@ -1247,6 +1259,7 @@ git merge main
 작업 끝난 후:
 - GitHub에서 `Compare & pull request` 클릭
 - PR 템플릿 작성 후 리뷰 요청 (`base: main`)
+- 브랜치 보호 규칙에 따라 `test` 체크 통과 후 머지
 - 머지 완료되면 로컬 정리:
 
 ```bash
