@@ -804,6 +804,7 @@ function renderComments(container, items, meetingId, currentUserId) {
         if (currentUserId && String(item.author_id) === currentUserId) {
             html += `<button type="button" class="comment-delete-btn" data-comment-id="${escapeHtml(item.comment_id)}">삭제</button>`;
         }
+        html += `<button type="button" class="comment-reply-btn" data-comment-id="${escapeHtml(item.comment_id)}">답글</button>`;
         html += "</div>";
         wrap.innerHTML = html;
         const deleteBtn = wrap.querySelector(".comment-delete-btn");
@@ -812,6 +813,42 @@ function renderComments(container, items, meetingId, currentUserId) {
                 if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
                 const res = await fetchJson(`/api/v1/meetings/${meetingId}/comments/${item.comment_id}`, { method: "DELETE" });
                 if (res.ok || res.status === 204) loadMeetingComments(meetingId);
+            });
+        }
+        const replyBtn = wrap.querySelector(".comment-reply-btn");
+        if (replyBtn) {
+            replyBtn.addEventListener("click", () => {
+                const existing = wrap.querySelector(".comment-reply-form-wrap");
+                if (existing) {
+                    existing.remove();
+                    return;
+                }
+                const formWrap = document.createElement("div");
+                formWrap.className = "comment-reply-form-wrap";
+                formWrap.innerHTML = `<form class="comment-reply-form"><textarea rows="2" placeholder="답글을 입력하세요."></textarea><button type="submit">등록</button> <button type="button" class="comment-reply-cancel">취소</button></form>`;
+                const form = formWrap.querySelector("form");
+                const textarea = formWrap.querySelector("textarea");
+                const cancelBtn = formWrap.querySelector(".comment-reply-cancel");
+                cancelBtn.addEventListener("click", () => formWrap.remove());
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const body = (textarea.value || "").trim();
+                    if (!body) return;
+                    try {
+                        const result = await fetchJson(`/api/v1/meetings/${meetingId}/comments`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ body, parent_id: item.comment_id }),
+                        });
+                        if (result.ok || result.status === 201) {
+                            formWrap.remove();
+                            loadMeetingComments(meetingId);
+                        }
+                    } catch (_err) {}
+                });
+                const repliesEl = wrap.querySelector(".comment-replies");
+                if (repliesEl) wrap.insertBefore(formWrap, repliesEl);
+                else wrap.appendChild(formWrap);
             });
         }
         if (item.replies && item.replies.length > 0) {
