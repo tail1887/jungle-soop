@@ -54,10 +54,26 @@ class MeetingRepository:
 
     @staticmethod
     def add_participant(meeting_id: str, user_id: str):
-        # TODO(feature/meetings-join): $addToSet 기반 참여 처리
-        return None
+        # $addToSet 기반 참여 처리 (중복 방지)
+        from bson import ObjectId
+
+        db = get_database(current_app)
+        result = db.meetings.update_one(
+            {"_id": ObjectId(meeting_id)},
+            {"$addToSet": {"participants": user_id}},
+        )
+        # matched_count > 0: 모임 존재 여부, modified_count > 0: 실제로 추가됐는지 (중복 아님)
+        return result.matched_count > 0, result.modified_count > 0
 
     @staticmethod
     def remove_participant(meeting_id: str, user_id: str):
-        # TODO(feature/meetings-join)
-        return None
+        # $pull 기반 참여 취소 처리
+        from bson import ObjectId
+
+        db = get_database(current_app)
+        result = db.meetings.update_one(
+            {"_id": ObjectId(meeting_id)},
+            {"$pull": {"participants": user_id}},
+        )
+        # matched_count > 0: 모임 존재 여부, modified_count > 0: 실제로 제거됐는지
+        return result.matched_count > 0, result.modified_count > 0
