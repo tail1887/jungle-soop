@@ -19,11 +19,9 @@ class MeetingService:
             }
 
         from datetime import datetime
-        from flask import session
-
         meeting_doc = payload.copy()
         meeting_doc.setdefault("description", "")
-        meeting_doc["author_id"] = session.get("user_id")
+        meeting_doc["author_id"] = _current_user_id()
         meeting_doc["participants"] = []
         meeting_doc["status"] = "open"
         now = datetime.utcnow()
@@ -42,9 +40,8 @@ class MeetingService:
 
     @staticmethod
     def update(meeting_id: str, payload: dict) -> dict:
-        from flask import session
-
         meeting = MeetingRepository.find_by_id(meeting_id)
+        current_user_id = _current_user_id()
 
         if not meeting:
             return {
@@ -57,7 +54,7 @@ class MeetingService:
                     },
                 },
             }
-        if str(meeting.get("author_id")) != session.get("user_id"):
+        if str(meeting.get("author_id")) != current_user_id:
             return {
                 "status_code": 403,
                 "body": {
@@ -111,9 +108,8 @@ class MeetingService:
 
     @staticmethod
     def delete(meeting_id: str) -> dict:
-        from flask import session
-
         meeting = MeetingRepository.find_by_id(meeting_id)
+        current_user_id = _current_user_id()
         if not meeting:
             return {
                 "status_code": 404,
@@ -125,7 +121,7 @@ class MeetingService:
                     },
                 },
             }
-        if str(meeting.get("author_id")) != session.get("user_id"):
+        if str(meeting.get("author_id")) != current_user_id:
             return {
                 "status_code": 403,
                 "body": {
@@ -229,9 +225,7 @@ class MeetingService:
 
     @staticmethod
     def join(meeting_id: str) -> dict:
-        from flask import session
-
-        user_id = session.get("user_id")
+        user_id = _current_user_id()
         if not user_id:
             return {
                 "status_code": 401,
@@ -337,9 +331,7 @@ class MeetingService:
 
     @staticmethod
     def cancel_join(meeting_id: str) -> dict:
-        from flask import session
-
-        user_id = session.get("user_id")
+        user_id = _current_user_id()
         if not user_id:
             return {
                 "status_code": 401,
@@ -464,3 +456,27 @@ def _serialize_meeting_detail(meeting: dict) -> dict:
         "status": meeting.get("status", "open"),
         "author_id": str(meeting.get("author_id", "")),
     }
+
+
+def _current_user_id() -> str | None:
+    import flask
+    from flask import has_app_context, has_request_context
+
+    if has_request_context() or has_app_context():
+        try:
+            user_id = getattr(flask.g, "user_id", None)
+            if user_id:
+                return str(user_id)
+        except RuntimeError:
+            pass
+
+    session_obj = getattr(flask, "session", None)
+    if session_obj is not None:
+        try:
+            session_user_id = session_obj.get("user_id")
+            if session_user_id:
+                return str(session_user_id)
+        except RuntimeError:
+            pass
+
+    return None
