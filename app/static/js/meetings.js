@@ -479,6 +479,13 @@ let currentMeetingDetail = null;
 function updateCloseButtonState(meeting) {
     const closeButton = document.getElementById("meeting-close-button");
     if (!closeButton) return;
+    const currentUserId = getCurrentUserId();
+    const authorId = String(meeting?.author_id || "");
+    const isAuthor = Boolean(currentUserId) && currentUserId === authorId;
+    if (!isAuthor) {
+        setButtonVisible(closeButton, false);
+        return;
+    }
     const status = meeting?.status || "open";
     const deadlineAt = meeting?.deadline_at || meeting?.scheduled_at;
     if (status === "open") {
