@@ -5,6 +5,7 @@ const TAB_ENDPOINTS = {
     joined_active: "/api/v1/profile/meetings/joined/active",
     joined_past: "/api/v1/profile/meetings/joined/past",
 };
+let currentProfile = null;
 
 function setUiMessage(element, text, type) {
     if (!element) {
@@ -92,9 +93,67 @@ async function loadMyProfile() {
     }
 
     const profile = result.data?.data || {};
+    currentProfile = profile;
     emailEl.textContent = profile.email || "-";
     nicknameInput.value = profile.nickname || "";
+    setProfileAvatarImage(profile.profile_image_url || "");
     setUiMessage(messageEl, "프로필을 불러왔습니다.", "success");
+}
+
+function setProfileAvatarImage(imageUrl) {
+    const avatarImage = document.getElementById("profile-avatar-image");
+    if (!avatarImage) {
+        return;
+    }
+    if (imageUrl) {
+        avatarImage.src = imageUrl;
+    }
+}
+
+function bindProfileAvatarForm() {
+    const form = document.getElementById("profile-avatar-form");
+    const input = document.getElementById("profile-avatar-input");
+    const saveButton = document.getElementById("profile-avatar-save-button");
+    const messageEl = document.getElementById("profile-message");
+    if (!form || !input || !saveButton || !messageEl) {
+        return;
+    }
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const file = input.files && input.files[0];
+        if (!file) {
+            setUiMessage(messageEl, "업로드할 이미지를 선택해주세요.", "error");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("avatar", file);
+
+        saveButton.disabled = true;
+        setUiMessage(messageEl, "프로필 이미지 업로드 중...", "");
+        try {
+            const result = await fetchJson("/api/v1/profile/me/avatar", {
+                method: "POST",
+                body: formData,
+            });
+            if (!result.ok) {
+                setUiMessage(messageEl, formatApiError(result, "프로필 이미지 업로드에 실패했습니다."), "error");
+                return;
+            }
+            const profileImageUrl = result.data?.data?.profile_image_url || "";
+            if (currentProfile) {
+                currentProfile.profile_image_url = profileImageUrl;
+            }
+            setProfileAvatarImage(profileImageUrl);
+            input.value = "";
+            setUiMessage(messageEl, "프로필 이미지가 업데이트되었습니다.", "success");
+        } catch (_error) {
+            setUiMessage(messageEl, "네트워크 오류가 발생했습니다.", "error");
+        } finally {
+            saveButton.disabled = false;
+        }
+    });
 }
 
 function bindProfileEditForm() {
@@ -207,6 +266,7 @@ function initProfilePage() {
     }
     loadMyProfile();
     bindProfileEditForm();
+    bindProfileAvatarForm();
     bindMeetingsTabs();
 }
 

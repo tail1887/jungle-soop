@@ -1,4 +1,6 @@
 import uuid
+from io import BytesIO
+from pathlib import Path
 
 import pytest
 from flask import current_app
@@ -64,6 +66,7 @@ def test_profile_get_update_flow(client):
     get_res = client.get("/api/v1/profile/me", headers=headers)
     assert get_res.status_code == 200
     assert get_res.get_json()["success"] is True
+    assert get_res.get_json()["data"]["profile_image_url"].startswith("https://api.dicebear.com/")
 
     patch_res = client.patch(
         "/api/v1/profile/me",
@@ -91,6 +94,32 @@ def test_profile_patch_invalid_input(client):
     response = client.patch("/api/v1/profile/me", json={}, headers=headers)
     assert response.status_code == 400
     assert response.get_json()["error"]["code"] == "INVALID_INPUT"
+
+
+@pytest.mark.integration
+def test_profile_avatar_upload_success(client, app):
+    user_id, headers = _signup_and_login(client)
+
+    upload_res = client.post(
+        "/api/v1/profile/me/avatar",
+        data={"avatar": (BytesIO(b"fake-image-bytes"), "avatar.png")},
+        headers=headers,
+        content_type="multipart/form-data",
+    )
+    assert upload_res.status_code == 200
+    body = upload_res.get_json()
+    assert body["success"] is True
+    assert body["data"]["profile_image_url"].startswith("/static/uploads/avatars/")
+
+    profile_res = client.get("/api/v1/profile/me", headers=headers)
+    assert profile_res.status_code == 200
+    assert profile_res.get_json()["data"]["profile_image_url"].startswith("/static/uploads/avatars/")
+
+    # cleanup uploaded test artifact
+    with app.app_context():
+        image_path = Path(current_app.static_folder) / "uploads" / "avatars" / f"{user_id}.png"
+        if image_path.exists():
+            image_path.unlink()
 
 
 @pytest.mark.integration
