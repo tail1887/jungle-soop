@@ -1217,6 +1217,24 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [ ] 6) `docs/ppt-demo`
   발표자료(PPT) 정리 및 데모 시나리오 확정
 
+#### 🧩 확장 가능 기능 백로그 (아이디어 메모)
+- [ ] 1) `feature/admin-role-foundation`  
+  관리자(admin/moderator) 권한 모델 추가
+  - 의존성: 없음 (선행 기반 기능)
+  - 우선순위: 중간 (운영 요구 발생 시 상향)
+- [ ] 2) `feature/ai-content-filter`  
+  게시글 AI 필터링(관리자 워크플로우와 연동)
+  - 의존성: `feature/admin-role-foundation`
+  - 우선순위: 중하 (운영 자동화 단계)
+- [ ] 3) `feature/messenger-from-meeting-posts`  
+  메신저 기능(모임 상세 게시글 기능 확장)
+  - 의존성: `feature/meeting-posts`
+  - 우선순위: 중간 (커뮤니케이션 확장)
+- [ ] 4) `feature/meeting-notifications`  
+  모임 알림 기능(시작 알림부터 단계적으로 적용)
+  - 의존성: `feature/meeting-posts` (선택), 메일 발송 인프라
+  - 우선순위: 중상 (사용자 리텐션 직접 영향)
+
 #### 📝 Merge to `main`
 - [ ] 기능 브랜치 병합 완료
 - [ ] 통합 테스트 완료
