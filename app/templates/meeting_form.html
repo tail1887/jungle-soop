@@ -1,37 +1,37 @@
 {% extends "base.html" %}
 {% block title %}Jungle Soop | 모임 만들기{% endblock %}
 {% block content %}
-<section class="card">
-    <h2>모임 만들기</h2>
-    <p class="helper-text">입력값 검증 후 모임 생성 API를 호출합니다.</p>
-    <form id="meeting-create-form" novalidate>
-        <label for="title">제목</label>
-        <input id="title" name="title" type="text" placeholder="모임 제목" required>
-        <label for="category">카테고리</label>
-        <select id="category" name="category" required>
+<section class="card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+    <h2 class="text-2xl font-bold text-slate-900">모임 만들기</h2>
+    <p class="mt-2 text-sm text-slate-500">입력값 검증 후 모임 생성 API를 호출합니다.</p>
+    <form id="meeting-create-form" class="mt-5 space-y-4" novalidate>
+        <label for="title" class="block text-sm font-medium text-slate-700">제목</label>
+        <input id="title" name="title" type="text" placeholder="모임 제목" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <label for="category" class="block text-sm font-medium text-slate-700">카테고리</label>
+        <select id="category" name="category" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
             <option value="meal">식사</option>
             <option value="exercise">운동</option>
             <option value="study">스터디</option>
             <option value="other" selected>기타</option>
         </select>
-        <label for="scheduled_at">일시</label>
-        <input id="scheduled_at" name="scheduled_at" type="datetime-local" required>
-        <label>소요 시간</label>
-        <div class="duration-input-row">
-            <input id="duration_hours" name="duration_hours" type="number" min="0" max="24" value="1" aria-label="소요 시간 시간"> <span class="duration-unit">시간</span>
-            <input id="duration_minutes" name="duration_minutes" type="number" min="0" max="59" value="0" aria-label="소요 시간 분"> <span class="duration-unit">분</span>
+        <label for="scheduled_at" class="block text-sm font-medium text-slate-700">일시</label>
+        <input id="scheduled_at" name="scheduled_at" type="datetime-local" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <label class="block text-sm font-medium text-slate-700">소요 시간</label>
+        <div class="duration-input-row flex flex-wrap items-center gap-2">
+            <input id="duration_hours" name="duration_hours" type="number" min="0" max="24" value="1" aria-label="소요 시간 시간" class="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm"> <span class="duration-unit text-sm text-slate-600">시간</span>
+            <input id="duration_minutes" name="duration_minutes" type="number" min="0" max="59" value="0" aria-label="소요 시간 분" class="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm"> <span class="duration-unit text-sm text-slate-600">분</span>
         </div>
-        <p id="meeting-create-end-time" class="helper-text">종료 예정: 일시와 소요시간을 입력하면 표시됩니다.</p>
-        <label for="deadline_at">마감 기한</label>
-        <input id="deadline_at" name="deadline_at" type="datetime-local">
-        <label for="place">장소</label>
-        <input id="place" name="place" type="text" placeholder="장소 입력" required>
-        <label for="description">설명</label>
-        <textarea id="description" name="description" rows="4" placeholder="모임 설명"></textarea>
-        <label for="max_capacity">모집 인원</label>
-        <input id="max_capacity" name="max_capacity" type="number" min="2" max="20" value="4" required>
-        <p id="meeting-create-message" class="form-message" role="alert" aria-live="polite"></p>
-        <button id="meeting-create-submit-button" type="submit">등록하기</button>
+        <p id="meeting-create-end-time" class="helper-text text-sm text-slate-500">종료 예정: 일시와 소요시간을 입력하면 표시됩니다.</p>
+        <label for="deadline_at" class="block text-sm font-medium text-slate-700">마감 기한</label>
+        <input id="deadline_at" name="deadline_at" type="datetime-local" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <label for="place" class="block text-sm font-medium text-slate-700">장소</label>
+        <input id="place" name="place" type="text" placeholder="장소 입력" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <label for="description" class="block text-sm font-medium text-slate-700">설명</label>
+        <textarea id="description" name="description" rows="4" placeholder="모임 설명" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+        <label for="max_capacity" class="block text-sm font-medium text-slate-700">모집 인원</label>
+        <input id="max_capacity" name="max_capacity" type="number" min="2" max="20" value="4" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <p id="meeting-create-message" class="form-message min-h-5 text-sm text-slate-600" role="alert" aria-live="polite"></p>
+        <button id="meeting-create-submit-button" type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">등록하기</button>
     </form>
 </section>
 {% endblock %}

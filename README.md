@@ -248,6 +248,20 @@ flowchart TB
 - **스타일 시스템**: Tailwind 기반으로 간격, 색상, 타이포그래피 일관성 유지
 - **인터랙션**: jQuery + AJAX로 새로고침 없이 목록/상태 일부 갱신
 - **반응형 대응**: 모바일 우선 레이아웃을 기본으로 데스크톱에서 확장
+- **빌드 파이프라인**: Tailwind CLI 기반으로 `app/static/css/tailwind.css` 생성
+
+Tailwind 개발 명령:
+
+```bash
+# 최초 1회
+npm install
+
+# 단발 빌드
+npm run build:css
+
+# 개발 중 감시 빌드
+npm run watch:css
+```
 
 ### ⚙️ 백엔드 (Server Side & DB)
 
@@ -1210,7 +1224,7 @@ docker compose -f docker/docker-compose.test.yml down -v
   타인 프로필 조회 (`/profile/{user_id}`) + 공개 범위 기본 정책(이메일 비공개)
 - [ ] 3) `feature/meeting-posts`  
   모임 상세 전용 게시글 시스템(작성/조회 권한: 작성자+참여자)
-- [ ] 4) `feature/ui-tailwind-refactor`  
+- [x] 4) `feature/ui-tailwind-refactor`  
   Tailwind 기반 UI 리뉴얼(기능 확장 후 화면 단위로 점진 전환)
 - [ ] 5) `docs/final-project-docs`  
   개발 문서 최종 정리 (API/스키마/운영 규칙 동기화)

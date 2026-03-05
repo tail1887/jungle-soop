@@ -1,0 +1,30 @@
+{
+  "name": "jungle-soop",
+  "version": "1.0.0",
+  "description": "`jungle-soop`는 기숙사생이 즉시 모임을 만들고 참여할 수 있도록 설계한 커뮤니티 웹 애플리케이션입니다.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i ./app/static/css/tailwind.input.css -o ./app/static/css/tailwind.css --minify",
+    "watch:css": "npx @tailwindcss/cli -i ./app/static/css/tailwind.input.css -o ./app/static/css/tailwind.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tail1887/jungle-soop.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tail1887/jungle-soop/issues"
+  },
+  "homepage": "https://github.com/tail1887/jungle-soop#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.1",
+    "tailwindcss": "^4.2.1"
+  }
+}
