@@ -1137,13 +1137,28 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [ ] feat: 참여/취소 후 UI 즉시 반영
 - [ ] test: 비동기 동작 검증
 
-#### 🌿 Branch: `feature/profile-page` (프로필)
-- [ ] feat: 마이페이지 - 내 정보 조회 (`GET /api/v1/profile/me`)
-- [ ] feat: 마이페이지 - 내 정보 수정 (`PATCH /api/v1/profile/me`)
-- [ ] feat: 내가 만든 모임 목록 조회
-- [ ] feat: 내가 현재 참여 중인 모임 목록 조회
-- [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회
-- [ ] test: 프로필 조회/수정/모임 탭(3종) 시나리오 테스트
+#### 🌿 Branch: `feature/profile-api` (프로필 기본 정보 API)
+- [ ] feat: 백엔드 - `GET /api/v1/profile/me` 구현
+- [ ] feat: 백엔드 - `PATCH /api/v1/profile/me` 구현
+- [ ] feat: 닉네임/소개/프로필 이미지 입력 검증
+- [ ] test: 프로필 조회/수정 API 테스트
+
+#### 🌿 Branch: `feature/profile-meetings-query` (프로필 모임 조회 API)
+- [ ] feat: 내가 만든 모임 목록 조회 API
+- [ ] feat: 내가 현재 참여 중인 모임 목록 조회 API
+- [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
+- [ ] test: 모임 3분류 조회 API 테스트
+
+#### 🎨 Branch: `feature/profile-ui` (프로필 화면 연동)
+- [ ] feat: 마이페이지(내 정보 카드 + 수정 폼) 구현
+- [ ] feat: 모임 탭 3종(만든/참여중/참여완료) UI 구현
+- [ ] feat: 프로필 API + 모임 조회 API 연동
+- [ ] test: 프로필 화면 주요 시나리오 수동 테스트
+
+#### ⚙️ Branch: `feature/profile-tests-stabilization` (테스트 안정화/보강)
+- [ ] test: 프로필 E2E 성격의 통합 시나리오 보강
+- [ ] test: 인증 만료/권한 오류(401/403) 회귀 테스트 보강
+- [ ] fix: flaky 테스트 정리 및 fixture 공통화
 
 #### ⚙️ Branch: `feature/deploy-ec2` (배포)
 - [ ] feat: 단일 EC2 서버 배포 스크립트/절차 작성
@@ -1161,6 +1176,10 @@ docker compose -f docker/docker-compose.test.yml down -v
 - 테스트는 Phase 마지막에 모아서 하지 않고 **기능 개발과 동시에** 작성합니다.
 - 각 기능 브랜치에서 최소 1개 이상의 단위/통합 테스트를 함께 추가합니다.
 - 기능 브랜치 PR에는 변경 기능을 검증하는 테스트(또는 미작성 사유)를 반드시 포함합니다.
+- 테스트를 분리하는 이유:
+  - [ ] **실행 환경 분리**: unit은 빠르게, integration은 DB/도커 환경에서 검증
+  - [ ] **원인 추적 용이**: 실패 시 비즈니스 로직 문제인지 인프라/연동 문제인지 빠르게 구분
+  - [ ] **협업 충돌 완화**: 기능 브랜치 테스트 + 안정화 브랜치 테스트를 역할별로 병렬 운영
 - PR 머지 조건:
   - [ ] 로컬 테스트 통과
   - [ ] `docker/docker-compose.test.yml` 기준 테스트 통과
