@@ -373,10 +373,26 @@ function validateCreateForm(payload) {
     if (!Number.isNaN(deadlineAtTs) && deadlineAtTs <= now) {
         return "마감 기한은 현재 시간 이후로 설정해주세요.";
     }
-    if (!Number.isNaN(deadlineAtTs) && deadlineAtTs >= scheduledAtTs) {
-        return "마감 기한은 모임 일시보다 이전이어야 합니다.";
+    if (!Number.isNaN(deadlineAtTs) && deadlineAtTs > scheduledAtTs) {
+        return "마감 기한은 모임 일시보다 이전 또는 동일해야 합니다.";
     }
     return "";
+}
+
+function syncDeadlineWithScheduled(scheduledInput, deadlineInput) {
+    if (!scheduledInput || !deadlineInput) {
+        return;
+    }
+    if (scheduledInput.value) {
+        deadlineInput.max = scheduledInput.value;
+    } else {
+        deadlineInput.removeAttribute("max");
+    }
+    const scheduledTs = Date.parse(scheduledInput.value || "");
+    const deadlineTs = Date.parse(deadlineInput.value || "");
+    if (!Number.isNaN(scheduledTs) && !Number.isNaN(deadlineTs) && deadlineTs > scheduledTs) {
+        deadlineInput.value = scheduledInput.value;
+    }
 }
 
 function bindMeetingCreatePage() {
@@ -394,13 +410,15 @@ function bindMeetingCreatePage() {
     }
     if (deadlineInput) {
         deadlineInput.min = getDatetimeLocalMin();
+    }
+    if (scheduledInput && deadlineInput) {
         scheduledInput.addEventListener("change", function () {
-            if (scheduledInput.value) {
-                deadlineInput.max = scheduledInput.value;
-            } else {
-                deadlineInput.removeAttribute("max");
-            }
+            syncDeadlineWithScheduled(scheduledInput, deadlineInput);
         });
+        deadlineInput.addEventListener("change", function () {
+            syncDeadlineWithScheduled(scheduledInput, deadlineInput);
+        });
+        syncDeadlineWithScheduled(scheduledInput, deadlineInput);
     }
 
     const durationHoursInput = form.elements.namedItem("duration_hours");
@@ -1023,7 +1041,7 @@ function bindMeetingEditPage() {
         if (scheduledAtField) scheduledAtField.min = minVal;
         if (deadlineAtField) {
             deadlineAtField.min = minVal;
-            if (scheduledAtField && scheduledAtField.value) deadlineAtField.max = scheduledAtField.value;
+            if (scheduledAtField) syncDeadlineWithScheduled(scheduledAtField, deadlineAtField);
         }
         if (typeof updateEditFormEndTime === "function") updateEditFormEndTime();
     };
@@ -1031,12 +1049,12 @@ function bindMeetingEditPage() {
     const deadlineInput = form.elements.namedItem("deadline_at");
     if (scheduledInput && deadlineInput) {
         scheduledInput.addEventListener("change", function () {
-            if (scheduledInput.value) {
-                deadlineInput.max = scheduledInput.value;
-            } else {
-                deadlineInput.removeAttribute("max");
-            }
+            syncDeadlineWithScheduled(scheduledInput, deadlineInput);
         });
+        deadlineInput.addEventListener("change", function () {
+            syncDeadlineWithScheduled(scheduledInput, deadlineInput);
+        });
+        syncDeadlineWithScheduled(scheduledInput, deadlineInput);
     }
     if (scheduledInput) scheduledInput.addEventListener("input", updateEditFormEndTime);
     if (scheduledInput) scheduledInput.addEventListener("change", updateEditFormEndTime);
