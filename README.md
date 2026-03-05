@@ -1089,27 +1089,27 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [x] docs: `docs/backend-handcoding-workbook.md` 교재 파일 추가
 
 #### 🌿 Branch: `feature/auth-signup` (회원가입)
-- [ ] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
-- [ ] feat: 입력값 검증/중복 이메일 검증
-- [ ] test: 회원가입 성공/실패 케이스 테스트
+- [x] feat: 백엔드 - `POST /api/v1/auth/signup` 구현
+- [x] feat: 입력값 검증/중복 이메일 검증
+- [x] test: 회원가입 성공/실패 케이스 테스트
 
-#### 🌿 Branch: `feature/auth-login-logout` (로그인/로그아웃)
-- [ ] feat: 백엔드 - `POST /api/v1/auth/login` 구현
-- [ ] feat: 백엔드 - `POST /api/v1/auth/logout` 구현
-- [ ] feat: JWT(access/refresh) 발급/폐기 처리
-- [ ] test: 로그인/로그아웃 테스트
+#### 🌿 Branch: `feature/auth-login-logout-v3` (로그인/로그아웃)
+- [x] feat: 백엔드 - `POST /api/v1/auth/login` 구현
+- [x] feat: 백엔드 - `POST /api/v1/auth/logout` 구현
+- [x] feat: JWT(access) 발급/인증 흐름 반영
+- [x] test: 로그인/로그아웃 테스트
 
 #### 🌿 Branch: `feature/auth-guard` (인증/인가)
-- [ ] feat: 인증 미들웨어 구현 (JWT Bearer 기반)
-- [ ] feat: 작성자 권한 검증 로직 구현
-- [ ] fix: 인증/인가 실패 공통 에러 응답 적용
-- [ ] test: 401/403 케이스 테스트
+- [x] feat: 인증 미들웨어 구현 (JWT Bearer 기반)
+- [x] feat: 작성자 권한 검증 로직 구현
+- [x] fix: 인증/인가 실패 공통 에러 응답 적용
+- [x] test: 401/403 케이스 테스트
 
 #### 🌿 Branch: `feature/meetings-crud` (모임 CRUD)
-- [ ] feat: 백엔드 - `POST /api/v1/meetings` 구현
-- [ ] feat: 백엔드 - `PATCH /api/v1/meetings/{meeting_id}` 구현
-- [ ] feat: 백엔드 - `DELETE /api/v1/meetings/{meeting_id}` 구현
-- [ ] test: 모임 CRUD API 테스트
+- [x] feat: 백엔드 - `POST /api/v1/meetings` 구현
+- [x] feat: 백엔드 - `PATCH /api/v1/meetings/{meeting_id}` 구현
+- [x] feat: 백엔드 - `DELETE /api/v1/meetings/{meeting_id}` 구현
+- [x] test: 모임 CRUD API 테스트
 
 #### 🌿 Branch: `feature/meetings-query` (모임 조회)
 - [ ] feat: 백엔드 - `GET /api/v1/meetings` 구현 (필터/정렬/페이지네이션)
@@ -1123,27 +1123,43 @@ docker compose -f docker/docker-compose.test.yml down -v
 - [ ] test: 참여/취소/충돌(409) 테스트
 
 #### 🎨 Branch: `feature/ui-auth-pages` (인증 화면 연동)
-- [ ] feat: 로그인/회원가입 페이지 작성
-- [ ] feat: 폼 검증/오류 메시지 처리
-- [ ] test: 인증 플로우 수동 테스트
+- [x] feat: 로그인/회원가입 페이지 작성
+- [x] feat: 폼 검증/오류 메시지 처리
+- [x] test: 인증 플로우 수동 테스트
 
 #### 🎨 Branch: `feature/ui-meeting-pages` (모임 화면 연동)
-- [ ] feat: 목록/상세/생성 화면 구현
-- [ ] feat: API 연동 및 상태 반영
-- [ ] test: 화면별 주요 시나리오 점검
+- [x] feat: 목록/상세/생성 화면 구현
+- [x] feat: API 연동 및 상태 반영
+- [x] test: 화면별 주요 시나리오 점검
 
 #### 🎨 Branch: `feature/ui-ajax-interaction` (AJAX 상호작용)
 - [ ] feat: 새로고침 없는 목록 갱신 처리
 - [ ] feat: 참여/취소 후 UI 즉시 반영
 - [ ] test: 비동기 동작 검증
 
-#### 🌿 Branch: `feature/profile-page` (프로필)
-- [ ] feat: 마이페이지 - 내 정보 조회 (`GET /api/v1/profile/me`)
-- [ ] feat: 마이페이지 - 내 정보 수정 (`PATCH /api/v1/profile/me`)
-- [ ] feat: 내가 만든 모임 목록 조회
-- [ ] feat: 내가 현재 참여 중인 모임 목록 조회
-- [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회
-- [ ] test: 프로필 조회/수정/모임 탭(3종) 시나리오 테스트
+#### 🎨 Branch: `feature/ui-jwt-token-flow` (프론트 JWT 토큰 흐름)
+- [x] feat: 로그인 성공 시 토큰 저장(localStorage/cookie) 처리
+- [x] feat: 보호 API 호출에 Bearer 토큰 자동 첨부
+- [x] feat: 로그아웃 시 토큰 정리 및 로그인 리다이렉트 처리
+- [x] test: 로그인 유지/로그아웃/401 리다이렉트 수동 시나리오 점검
+
+#### 🌿 Branch: `feature/profile-api` (프로필 정보 API)
+- [ ] feat: `GET /api/v1/profile/me` 구현 (내 정보 조회)
+- [ ] feat: `PATCH /api/v1/profile/me` 구현 (내 정보 수정)
+- [ ] test: 프로필 조회/수정 API 테스트
+- [ ] test: 프로필 수정 후 재조회 일관성 테스트
+
+#### 🌿 Branch: `feature/profile-meetings-query` (프로필 모임 조회 API)
+- [ ] feat: 내가 만든 모임 목록 조회 API
+- [ ] feat: 내가 현재 참여 중인 모임 목록 조회 API
+- [ ] feat: 내가 참여했던(종료/지난) 모임 목록 조회 API
+- [ ] test: 모임 유형(created/joined_active/joined_past)별 조회 테스트
+- [ ] test: 모임 탭 데이터 분류/권한 케이스 통합 테스트
+
+#### 🎨 Branch: `feature/profile-ui` (프로필 화면 연동)
+- [ ] feat: 프로필 페이지 UI(내 정보 카드 + 수정 폼) 구현
+- [ ] feat: 모임 탭 UI(만든 모임/참여 중/참여했던 모임) 구현
+- [ ] test: 프로필 화면 주요 시나리오 수동 테스트
 
 #### ⚙️ Branch: `feature/deploy-ec2` (배포)
 - [ ] feat: 단일 EC2 서버 배포 스크립트/절차 작성
