@@ -3,25 +3,24 @@
 {% block content %}
 <section class="card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
     <h2 class="text-2xl font-bold text-slate-900">모임 목록</h2>
-    <p class="mt-2 text-sm text-slate-500">API 응답 상태에 따라 목록 UI를 갱신합니다.</p>
     <div class="mt-4 flex flex-wrap items-center gap-2">
         <div id="meetings-toolbar-left" class="flex flex-wrap items-center gap-2">
-            <select id="meetings-filter-category" aria-label="카테고리 필터" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-                <option value="">전체</option>
-                <option value="meal">식사</option>
-                <option value="exercise">운동</option>
-                <option value="study">스터디</option>
-                <option value="other">기타</option>
-            </select>
             <button id="meetings-filter-status" type="button" aria-label="상태 필터" class="rounded-lg bg-slate-200 px-3 py-2 text-sm font-medium text-slate-700">모집중</button>
             <button id="meetings-sort-latest" type="button" aria-label="정렬" class="rounded-lg bg-slate-200 px-3 py-2 text-sm font-medium text-slate-700">최신순</button>
         </div>
         <button id="meetings-refresh-button" type="button" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">새로고침</button>
         <a class="button-link rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white no-underline hover:bg-indigo-500" href="{{ url_for('meeting_new') }}">모임 만들기</a>
     </div>
-    <div id="meetings-search-row" class="mt-4 flex gap-2">
-        <input id="meetings-search-input" type="text" placeholder="모임 제목 검색" aria-label="모임 제목 검색" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-        <button id="meetings-search-button" type="button" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">검색</button>
+    <div id="meetings-search-row" class="mt-4 flex flex-wrap items-center gap-2">
+        <select id="meetings-filter-category" aria-label="카테고리 필터" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="">전체</option>
+            <option value="meal">식사</option>
+            <option value="exercise">운동</option>
+            <option value="study">스터디</option>
+            <option value="other">기타</option>
+        </select>
+        <input id="meetings-search-input" type="text" placeholder="모임 제목 검색" aria-label="모임 제목 검색" class="min-w-[220px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <button id="meetings-search-button" type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">검색</button>
     </div>
     <p id="meetings-list-message" class="form-message mt-3 min-h-5 text-sm text-slate-600" role="alert" aria-live="polite"></p>
     <ul id="meetings-list" class="meeting-list mt-3 grid gap-3"></ul>

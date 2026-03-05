@@ -136,6 +136,18 @@ function computeEndTimeDisplay(scheduledAtStr, durationMinutes) {
     return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")} ${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
 }
 
+function formatDateTimeForDisplay(value, fallback = "일시 미정") {
+    if (!value) {
+        return fallback;
+    }
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) {
+        const normalized = String(value).replace("T", " ");
+        return normalized.length >= 16 ? normalized.slice(0, 16) : normalized;
+    }
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+}
+
 async function fetchJson(url, options) {
     const token = getAccessToken();
     const requestOptions = options || {};
@@ -158,11 +170,14 @@ function createMeetingListItem(meeting) {
     const id = meeting.meeting_id || "unknown";
     const title = meeting.title || "제목 없음";
     const place = pickFirst(meeting.place, meeting.location, "장소 미정");
-    const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
-    const deadlineAt = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAt);
+    const scheduledAtRaw = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "");
+    const deadlineAtRaw = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAtRaw);
+    const scheduledAt = formatDateTimeForDisplay(scheduledAtRaw);
+    const deadlineAt = formatDateTimeForDisplay(deadlineAtRaw);
     const count = meeting.participant_count ?? 0;
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
+    const statusLabel = status === "open" ? "모집중" : "마감됨";
     const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
     const durationText = formatDurationMinutes(meeting.duration_minutes ?? 60);
 
@@ -171,7 +186,7 @@ function createMeetingListItem(meeting) {
             <strong>${title}</strong>
         </a>
         <p>${place} · ${scheduledAt} · ${categoryLabel}${durationText ? ` · 소요 ${durationText}` : ""}</p>
-        <p>마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${status}</p>
+        <p>마감 ${deadlineAt} · 참여 ${count}/${maxCapacity} · 상태 ${statusLabel}</p>
     `;
     return li;
 }
@@ -479,17 +494,28 @@ function setMeetingDetail(meeting) {
         }
     }
     const place = pickFirst(meeting.place, meeting.location, "장소 미정");
-    const scheduledAt = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정");
-    const deadlineAt = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAt);
+    const scheduledAtRaw = pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "");
+    const deadlineAtRaw = pickFirst(meeting.deadline_at, meeting.deadline, scheduledAtRaw);
+    const scheduledAt = formatDateTimeForDisplay(scheduledAtRaw);
+    const deadlineAt = formatDateTimeForDisplay(deadlineAtRaw);
     const count = meeting.participant_count ?? 0;
     const maxCapacity = pickFirst(meeting.max_capacity, meeting.capacity, "-");
     const status = meeting.status || "open";
+    const statusLabel = status === "open" ? "모집중" : "마감됨";
     const categoryLabel = { meal: "식사", exercise: "운동", study: "스터디", other: "기타" }[meeting.category || "other"] || "기타";
     const durationMins = meeting.duration_minutes ?? 60;
     const durationText = formatDurationMinutes(durationMins);
-    const endTimeStr = computeEndTimeDisplay(meeting.scheduled_at || "", durationMins);
+    const endTimeStr = computeEndTimeDisplay(scheduledAtRaw, durationMins);
     const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
-    metaEl.textContent = [place, categoryLabel, `일정 ${scheduledAt}`, durationAndEnd, `마감 ${deadlineAt}`, `참여 ${count}/${maxCapacity}`, `상태 ${status}`].filter(Boolean).join(" · ");
+    metaEl.innerHTML = [
+        `<span class="font-medium text-slate-700">카테고리</span> ${escapeHtml(categoryLabel)}`,
+        `<span class="font-medium text-slate-700">장소</span> ${escapeHtml(place)}`,
+        `<span class="font-medium text-slate-700">일정</span> ${escapeHtml(scheduledAt)}`,
+        durationAndEnd ? `<span class="font-medium text-slate-700">소요/종료</span> ${escapeHtml(durationAndEnd.replace("소요 ", ""))}` : "",
+        `<span class="font-medium text-slate-700">마감</span> ${escapeHtml(deadlineAt)}`,
+        `<span class="font-medium text-slate-700">참여</span> ${escapeHtml(`${count}/${maxCapacity}`)}`,
+        `<span class="font-medium text-slate-700">상태</span> ${escapeHtml(statusLabel)}`,
+    ].filter(Boolean).join(" <span class=\"text-slate-300\">|</span> ");
     descEl.textContent = meeting.description || "설명이 없습니다.";
 }
 
@@ -537,15 +563,10 @@ function renderMeetingParticipants(participants) {
 
 function updateMeetingDetailCounters(detailData) {
     const root = document.getElementById("meeting-detail-root");
-    const metaEl = document.getElementById("meeting-detail-meta");
-    if (!root || !metaEl) {
+    if (!root) {
         return;
     }
-    const baseMeta = root.dataset.metaPrefix || "정보";
-    const maxCapacity = root.dataset.maxCapacity || "-";
-    const participantCount = detailData.participant_count ?? 0;
-    const status = detailData.status || "open";
-    metaEl.textContent = `${baseMeta} · 참여 ${participantCount}/${maxCapacity} · 상태 ${status}`;
+    root.dataset.maxCapacity = String(detailData.max_capacity ?? root.dataset.maxCapacity ?? "-");
 }
 
 async function requestJoinAction(meetingId, method) {
@@ -757,16 +778,7 @@ async function loadMeetingDetail(options) {
         const meeting = result.data?.data || {};
         currentMeetingDetail = meeting;
         root.dataset.maxCapacity = String(pickFirst(meeting.max_capacity, meeting.capacity, "-"));
-        const durationMins = meeting.duration_minutes ?? 60;
-        const durationText = formatDurationMinutes(durationMins);
-        const endTimeStr = computeEndTimeDisplay(meeting.scheduled_at || "", durationMins);
-        const durationAndEnd = durationText ? (endTimeStr ? `소요 ${durationText} · 종료 예정 ${endTimeStr}` : `소요 ${durationText}`) : "";
-        root.dataset.metaPrefix = [
-            pickFirst(meeting.place, meeting.location, "장소 미정"),
-            "일정 " + pickFirst(meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정"),
-            durationAndEnd,
-            "마감 " + pickFirst(meeting.deadline_at, meeting.deadline, meeting.scheduled_at, meeting.datetime, meeting.time, "일시 미정"),
-        ].filter(Boolean).join(" · ");
+        root.dataset.metaPrefix = "";
         setMeetingDetail(meeting);
         renderMeetingParticipants(meeting.participants);
         applyDetailActionVisibility(meeting);
@@ -841,7 +853,6 @@ function renderComments(container, items, meetingId, currentUserId, options) {
     const flatReplies = options && options.flatReplies;
     container.innerHTML = "";
     if (!items.length) {
-        container.appendChild(document.createTextNode("댓글이 없습니다."));
         return;
     }
     items.forEach((item) => {
