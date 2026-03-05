@@ -11,6 +11,10 @@ on:
         required: false
         default: "main"
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   deploy-ec2:
     runs-on: ubuntu-latest
