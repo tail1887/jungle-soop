@@ -44,6 +44,23 @@
 
 ## 목차
 
+- [1. Tech Stack](#1-tech-stack)
+- [2. 프로젝트 요구사항](#2-프로젝트-요구사항)
+- [3. 시스템 설계](#3-시스템-설계)
+  - [전체 아키텍처 다이어그램 uml코드 및 설명](#전체-아키텍처-다이어그램-uml코드-및-설명)
+  - [프론트엔드 리니어 아키텍처](#프론트엔드-리니어-아키텍처)
+  - [백엔드 리니어 아키텍처](#백엔드-리니어-아키텍처)
+  - [💻 프론트엔드 (Client Side)](#-프론트엔드-client-side)
+  - [⚙️ 백엔드 (Server Side & DB)](#️-백엔드-server-side--db)
+- [4. API 컨벤션](#4-api-컨벤션)
+- [5. Database Schema (데이터베이스 스키마)](#5-database-schema-데이터베이스-스키마)
+- [6. Directory Structure (디렉토리 구조)](#6-directory-structure-디렉토리-구조)
+- [7. Prerequisites (사전 요구사항)](#7-prerequisites-사전-요구사항)
+- [8. How to Run (실행 방법)](#8-how-to-run-실행-방법)
+- [9. 테스트 (Testing)](#9-테스트-testing)
+- [10. Development Guide & Progress](#10-development-guide--progress)
+- [🔍 Troubleshooting & Challenges](#-troubleshooting--challenges)
+
 ## 1. Tech Stack
 
 - **프론트엔드**: HTML, CSS, Tailwind, JavaScript, jQuery, AJAX
@@ -125,6 +142,43 @@ flowchart TB
 - **Data Layer**: MongoDB는 사용자, 모임, 참여 정보 등 핵심 도메인 데이터를 저장합니다.
 - **Infrastructure/Runtime**: 애플리케이션은 Docker 컨테이너로 패키징되어 AWS EC2 환경에서 실행됩니다.
 - **CI/CD**: GitHub Actions가 빌드/배포 파이프라인을 자동화하여 일관된 배포를 지원합니다.
+
+### 프론트엔드 리니어 아키텍처
+
+SSR 기반 페이지 렌더링과 화면 단위 JS 모듈을 선형 흐름으로 단순화한 다이어그램입니다.
+
+```mermaid
+flowchart LR
+    B[Browser] --> R[Flask SSR Route]
+    R --> H[HTML/Jinja Template]
+    H --> T[Tailwind CSS]
+    H --> J[Page JS Module]
+    J --> A[AJAX Fetch]
+    A --> U[DOM Update]
+```
+
+- **핵심 포인트**: 브라우저 진입 → SSR HTML 응답 → JS 초기화 → AJAX 요청 → DOM 갱신 순서로 동작합니다.
+- **적용 대상**: `meetings.js`, `profile.js`, `auth.js`, `user_profile_page.js` 등 페이지 중심 스크립트 구조
+
+### 백엔드 리니어 아키텍처
+
+요청 처리 경로를 `Route → Service → Repository → MongoDB`로 고정한 선형 아키텍처 다이어그램입니다.
+
+```mermaid
+flowchart LR
+    C[Client Request] --> RT[Flask Route]
+    RT --> MW[Auth Guard/Login Required]
+    MW --> SV[Service Layer]
+    SV --> RP[Repository Layer]
+    RP --> DB[(MongoDB)]
+    DB --> RP
+    RP --> SV
+    SV --> RES[JSON/SSR Response]
+    RES --> C
+```
+
+- **핵심 포인트**: HTTP/인증/응답 책임은 Route, 도메인 규칙은 Service, DB I/O는 Repository로 분리합니다.
+- **효과**: 테스트 분리(Unit/Integration), 스펙 준수, 변경 영향 범위 최소화
 
 ### 💻 프론트엔드 (Client Side)
 
@@ -1359,3 +1413,78 @@ PR 생성 시 다음 절차를 따릅니다:
 
 ## 🔍 Troubleshooting & Challenges
 
+프로젝트를 진행하면서 자주 만난 이슈를 정리했습니다.  
+아래 항목은 "증상 → 원인 → 해결/예방" 순서로 빠르게 확인할 수 있도록 작성했습니다.
+
+### 1) JWT 인증 실패(401) 이슈
+
+- **증상**
+  - 로그인 직후 일부 API 요청에서 `401 Unauthorized` 발생
+  - 페이지 전환 후 사용자 상태가 간헐적으로 비로그인으로 표시
+- **원인**
+  - 토큰 저장 위치(쿠키/스토리지)와 요청 헤더 처리 로직이 일관되지 않음
+  - 만료 토큰에 대한 예외 처리 부족
+- **해결**
+  - 인증 헤더 주입 방식을 공통 함수로 통일
+  - 만료/무효 토큰 감지 시 로그인 페이지로 안전하게 리다이렉트
+- **예방**
+  - 인증 관련 유틸은 단일 진입점으로 유지
+  - 인증 실패 케이스(만료/변조/누락) 테스트를 필수 시나리오로 관리
+
+### 2) MongoDB ObjectId 처리 오류
+
+- **증상**
+  - 상세 조회/수정/삭제 API에서 `InvalidId` 또는 500 에러 발생
+- **원인**
+  - 문자열 ID를 그대로 DB 쿼리에 사용하거나 형식 검증 없이 변환
+- **해결**
+  - 라우트 진입 시 ID 형식을 먼저 검증하고, 검증 실패는 `400 Bad Request` 반환
+  - DB 접근 계층에서 ObjectId 변환 책임을 일원화
+- **예방**
+  - "입력 검증 → 변환 → 쿼리" 순서를 모든 API에 동일 적용
+
+### 3) 모임 참여 인원 정합성 문제
+
+- **증상**
+  - 빠르게 연속 클릭하거나 동시 요청이 들어올 때 참여 인원이 실제보다 크게 표시됨
+- **원인**
+  - 읽기 후 쓰기(read-modify-write) 방식으로 경쟁 상태(race condition) 발생
+- **해결**
+  - 중복 참여 방지 조건을 먼저 검사
+  - 가능한 구간은 원자적 업데이트(조건 기반 업데이트)로 변경
+- **예방**
+  - 동시성 관점 테스트(동일 사용자 중복 요청, 다중 사용자 동시 요청) 추가
+
+### 4) SSR(Jinja2) + AJAX 혼합 구조의 상태 동기화
+
+- **증상**
+  - 초기 렌더링 내용과 이후 AJAX 응답으로 갱신된 화면 상태가 불일치
+- **원인**
+  - "초기 데이터 소스"와 "갱신 데이터 소스"의 기준 필드가 달랐음
+- **해결**
+  - 화면 상태의 단일 기준 모델을 정의하고, 렌더링/갱신 로직에서 동일 필드만 사용
+  - 이벤트 바인딩 시점(초기/동적 DOM)을 분리해 처리
+- **예방**
+  - 페이지 단위로 "SSR 초기 상태 + AJAX 갱신" 체크리스트 운영
+
+### 5) Docker/배포 환경 차이 이슈
+
+- **증상**
+  - 로컬에서는 정상 동작하지만 컨테이너/서버에서 DB 연결 또는 정적 파일 경로 오류 발생
+- **원인**
+  - 환경 변수 누락, 상대 경로 의존, 실행 환경별 설정 불일치
+- **해결**
+  - `.env.example` 기준으로 필수 변수 명시
+  - 경로/호스트 설정을 환경 변수 기반으로 통일
+- **예방**
+  - 배포 전 `docker-compose` 기준 스모크 테스트 수행
+  - "로컬/컨테이너/운영" 3개 환경 체크 항목을 문서화
+
+### 회고 (What we learned)
+
+- 기능 구현 속도만큼 **데이터/인증 정합성**이 중요하다는 점을 확인했습니다.
+- 초기에 문서(README, API 규칙, 브랜치 규칙)를 함께 업데이트하면 협업 비용이 크게 줄어듭니다.
+- README가 커질수록 섹션 분리(예: `docs/` 디렉토리)와 인덱스/링크 체계가 중요하므로, 주기적으로 문서 구조를 재정리하기로 했습니다.
+- 인프라 협업은 "요구사항 정의 -> IaC/설정 변경 PR -> 리뷰 -> 스테이징 검증 -> 운영 반영"의 공통 프로세스로 진행하는 것이 필요한 것을 느꼈습니다.
+- 발표 준비 과정에서는 수동 시나리오 테스트를 수행했지만, 다음 단계에서는 시나리오를 스크립트화하여 반복 실행 가능한 자동 검증으로 전환할 계획입니다.
+- 테스트 자동화 범위는 API/인증/권한뿐 아니라 E2E(핵심 사용자 흐름), 성능 스모크, 배포 후 헬스체크까지 확장해 회귀 이슈를 더 빠르게 차단해야 합니다.
