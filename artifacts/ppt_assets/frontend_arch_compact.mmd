@@ -1,0 +1,10 @@
+flowchart TB
+    B[Browser]
+    R[Flask SSR Route]
+    H[HTML/Jinja Template]
+    J[Page JS Module]
+    A[AJAX Fetch]
+    U[DOM Update]
+
+    B --> R --> H
+    H --> J --> A --> U

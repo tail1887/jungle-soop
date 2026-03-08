@@ -1,0 +1,7 @@
+flowchart LR
+    B[Browser] --> R[Flask SSR Route]
+    R --> H[HTML/Jinja Template]
+    H --> T[Tailwind CSS]
+    H --> J[Page JS Module]
+    J --> A[AJAX Fetch]
+    A --> U[DOM Update]

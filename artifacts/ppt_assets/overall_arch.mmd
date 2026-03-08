@@ -1,0 +1,37 @@
+flowchart TB
+    subgraph Client["Client Layer"]
+        U[User Browser]
+        FE[HTML/CSS/Tailwind<br/>JavaScript/jQuery/AJAX]
+        U --> FE
+    end
+
+    subgraph App["Application Layer"]
+        FLASK[Flask Server]
+        JINJA[Jinja2 Template Rendering]
+        API[REST API Endpoints]
+        FLASK --> JINJA
+        FLASK --> API
+    end
+
+    subgraph Data["Data Layer"]
+        MONGO[(MongoDB)]
+    end
+
+    subgraph Infra["Infrastructure/Runtime"]
+        EC2[AWS EC2]
+        DOCKER[Docker Container]
+        EC2 --> DOCKER
+    end
+
+    subgraph CICD["CI/CD Pipeline"]
+        GH[GitHub Actions]
+        BUILD[Docker Build]
+        DEPLOY[Deploy to EC2]
+        GH --> BUILD --> DEPLOY
+    end
+
+    FE -->|HTTP Request| FLASK
+    JINJA -->|SSR HTML Response| FE
+    API -->|JSON Response| FE
+    FLASK -->|CRUD| MONGO
+    DEPLOY --> EC2

@@ -1,0 +1,30 @@
+flowchart TB
+    subgraph OP["Infrastructure Operating Principles"]
+        P1[Automated Deployment<br/>GitHub Actions]
+        P2[Environment Separation<br/>dev / prod config]
+        P3[Containerized Runtime<br/>Docker on EC2]
+        P4[Data Durability<br/>MongoDB volume backup]
+        P5[Observability<br/>app log and deploy log]
+        P6[Safe Release Rule<br/>PR test pass before deploy]
+    end
+
+    DEV[Developer]
+    GH[GitHub Actions]
+    EC2[AWS EC2]
+    APP[App Container]
+    DB[(MongoDB)]
+    LOG[Logs/Monitoring]
+
+    DEV -->|PR and Merge| GH
+    GH -->|build and deploy| EC2
+    EC2 --> APP
+    APP --> DB
+    APP --> LOG
+    GH --> LOG
+
+    P1 -.applied in.-> GH
+    P2 -.applied in.-> EC2
+    P3 -.applied in.-> APP
+    P4 -.applied in.-> DB
+    P5 -.applied in.-> LOG
+    P6 -.applied in.-> GH

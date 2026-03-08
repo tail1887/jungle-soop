@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant C as Client
+    participant F as Flask
+    participant D as MongoDB
+
+    C->>F: POST /api/v1/auth/login (email, password)
+    F->>D: 사용자 조회 (email)
+    D-->>F: user document
+    F->>F: 비밀번호 검증
+    alt 인증 성공
+        F-->>C: 200 OK + access_token 발급
+    else 인증 실패
+        F-->>C: 401 Unauthorized
+    end

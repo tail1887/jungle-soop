@@ -1,0 +1,10 @@
+flowchart LR
+    C[Client Request] --> RT[Flask Route]
+    RT --> MW[Auth Guard/Login Required]
+    MW --> SV[Service Layer]
+    SV --> RP[Repository Layer]
+    RP --> DB[(MongoDB)]
+    DB --> RP
+    RP --> SV
+    SV --> RES[JSON/SSR Response]
+    RES --> C

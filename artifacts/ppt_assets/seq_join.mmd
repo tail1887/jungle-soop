@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant C as Client
+    participant F as Flask
+    participant D as MongoDB
+
+    C->>F: POST /api/v1/meetings/{id}/join
+    F->>F: 인증 확인
+    F->>D: meeting 조회 + 참여 가능 여부 확인
+    alt 참여 가능
+        F->>D: participants 업데이트 (원자적 반영)
+        D-->>F: update success
+        F-->>C: 200 OK
+    else 정원 초과/중복 참여
+        F-->>C: 409 Conflict
+    end
